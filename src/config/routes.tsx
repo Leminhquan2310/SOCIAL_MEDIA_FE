@@ -121,8 +121,8 @@ export const routes: RouteObject[] = [
 
 // Import Navigate type
 import { Navigate } from "react-router-dom";
-import Messages from "@/pages/Messages";
-import Notifications from "@/pages/Notifications";
+import Messages from "@/src/pages/Messages";
+import Notifications from "@/src/pages/Notifications";
 import { Settings } from "lucide-react";
-import Privacy from "@/pages/Privacy";
-import Terms from "@/pages/Terms";
+import Privacy from "@/src/pages/Privacy";
+import Terms from "@/src/pages/Terms";

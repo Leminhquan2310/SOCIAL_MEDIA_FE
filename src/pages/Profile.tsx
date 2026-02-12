@@ -20,9 +20,9 @@ import {
   UserPlus,
   MessageCircle,
 } from "lucide-react";
-import { MOCK_POSTS, ONLINE_FRIENDS, SUGGESTED_FRIENDS, MOCK_USER } from "../constants";
+import { MOCK_POSTS, ONLINE_FRIENDS, SUGGESTED_FRIENDS, MOCK_USER } from "../../constants";
 import PostCard from "../components/PostCard";
-import { User } from "../types";
+import { User } from "../../types";
 
 /**
  * Profile Page

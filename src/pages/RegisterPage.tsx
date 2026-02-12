@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLoading } from "../contexts/LoadingContext";
 import { handleApiError } from "../services/api";
 import { ShieldCheck, UserPlus, AlertCircle, CheckCircle } from "lucide-react";
-import { RegisterRequest } from "../types";
+import { RegisterRequest } from "../../types";
 
 /**
  * Register Page
