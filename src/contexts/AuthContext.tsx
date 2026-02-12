@@ -7,8 +7,8 @@ import {
   LoginResponse,
   RegisterResponse,
   ApiResponse,
-} from "../types";
-import { MOCK_USER } from "../constants";
+} from "../../types";
+import { MOCK_USER } from "../../constants";
 import api, { handleApiError } from "../services/api";
 import { authApi } from "../utils/apiClient";
 import { API_CONFIG } from "../config/apiConfig";

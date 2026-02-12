@@ -1,25 +1,25 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { LoadingProvider } from "./contexts/LoadingContext";
-import LoadingOverlay from "./components/LoadingOverlay";
-import MainLayout from "./layouts/MainLayout";
-import AuthLayout from "./layouts/AuthLayout";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./src/contexts/AuthContext";
+import { LoadingProvider } from "./src/contexts/LoadingContext";
+import LoadingOverlay from "./src/components/LoadingOverlay";
+import MainLayout from "./src/layouts/MainLayout";
+import AuthLayout from "./src/layouts/AuthLayout";
+import ProtectedRoute from "./src/components/ProtectedRoute";
 
 // Auth pages
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
+import LoginPage from "./src/pages/LoginPage";
+import RegisterPage from "./src/pages/RegisterPage";
 
 // App pages
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import Friends from "./pages/Friends";
-import Messages from "./pages/Messages";
-import Notifications from "./pages/Notifications";
-import Settings from "./pages/Settings";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
+import Home from "./src/pages/Home";
+import Profile from "./src/pages/Profile";
+import Friends from "./src/pages/Friends";
+import Messages from "./src/pages/Messages";
+import Notifications from "./src/pages/Notifications";
+import Settings from "./src/pages/Settings";
+import Privacy from "./src/pages/Privacy";
+import Terms from "./src/pages/Terms";
 
 /**
  * App Component

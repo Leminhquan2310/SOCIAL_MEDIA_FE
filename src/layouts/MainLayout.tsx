@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { User } from "../types";
+import { User } from "../../types";
 import Sidebar from "../components/Sidebar";
 import {
   Bell,
@@ -15,7 +15,7 @@ import {
   Heart,
   MessageCircle,
 } from "lucide-react";
-import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from "../constants";
+import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from "../../constants";
 
 interface NotificationItem {
   id: number;

@@ -1,37 +1,44 @@
-
-import React, { useState } from 'react';
-import { UserCheck, UserPlus, Search, UserX, MessageSquare } from 'lucide-react';
-import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from '../constants';
+import React, { useState } from "react";
+import { UserCheck, UserPlus, Search, UserX, MessageSquare } from "lucide-react";
+import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from "../../constants";
 
 const Friends: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'all' | 'requests' | 'suggestions'>('all');
+  const [activeTab, setActiveTab] = useState<"all" | "requests" | "suggestions">("all");
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[600px]">
       <div className="p-6 border-b border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Friends</h1>
         <div className="flex gap-2 mb-6">
-          <button 
-            onClick={() => setActiveTab('all')}
+          <button
+            onClick={() => setActiveTab("all")}
             className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-              activeTab === 'all' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              activeTab === "all"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             All Friends
           </button>
-          <button 
-            onClick={() => setActiveTab('requests')}
+          <button
+            onClick={() => setActiveTab("requests")}
             className={`px-4 py-2 rounded-lg font-bold text-sm transition-all relative ${
-              activeTab === 'requests' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              activeTab === "requests"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             Requests
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">2</span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
+              2
+            </span>
           </button>
-          <button 
-            onClick={() => setActiveTab('suggestions')}
+          <button
+            onClick={() => setActiveTab("suggestions")}
             className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-              activeTab === 'suggestions' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              activeTab === "suggestions"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             Suggestions
@@ -40,26 +47,37 @@ const Friends: React.FC = () => {
 
         <div className="relative">
           <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search friends..." 
+          <input
+            type="text"
+            placeholder="Search friends..."
             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
           />
         </div>
       </div>
 
       <div className="p-6">
-        {activeTab === 'all' && (
+        {activeTab === "all" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {ONLINE_FRIENDS.concat(SUGGESTED_FRIENDS.slice(0, 1)).map(friend => (
-              <div key={friend.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all group">
+            {ONLINE_FRIENDS.concat(SUGGESTED_FRIENDS.slice(0, 1)).map((friend) => (
+              <div
+                key={friend.id}
+                className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all group"
+              >
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <img src={friend.avatar} className="w-12 h-12 rounded-full object-cover" alt="" />
-                    {friend.isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>}
+                    <img
+                      src={friend.avatar}
+                      className="w-12 h-12 rounded-full object-cover"
+                      alt=""
+                    />
+                    {friend.isOnline && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    )}
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{friend.name}</p>
+                    <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {friend.name}
+                    </p>
                     <p className="text-xs text-gray-500">12 mutual friends</p>
                   </div>
                 </div>
@@ -76,15 +94,32 @@ const Friends: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'requests' && (
+        {activeTab === "requests" && (
           <div className="space-y-4">
             {[
-              { id: 'r1', name: 'James Miller', username: 'jmiller', avatar: 'https://picsum.photos/seed/james/200' },
-              { id: 'r2', name: 'Emily Blunt', username: 'eblunt', avatar: 'https://picsum.photos/seed/emily/200' },
-            ].map(request => (
-              <div key={request.id} className="flex flex-col sm:flex-row items-center justify-between p-4 border border-gray-100 rounded-xl bg-blue-50/30">
+              {
+                id: "r1",
+                name: "James Miller",
+                username: "jmiller",
+                avatar: "https://picsum.photos/seed/james/200",
+              },
+              {
+                id: "r2",
+                name: "Emily Blunt",
+                username: "eblunt",
+                avatar: "https://picsum.photos/seed/emily/200",
+              },
+            ].map((request) => (
+              <div
+                key={request.id}
+                className="flex flex-col sm:flex-row items-center justify-between p-4 border border-gray-100 rounded-xl bg-blue-50/30"
+              >
                 <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                  <img src={request.avatar} className="w-14 h-14 rounded-full border-2 border-white shadow-sm" alt="" />
+                  <img
+                    src={request.avatar}
+                    className="w-14 h-14 rounded-full border-2 border-white shadow-sm"
+                    alt=""
+                  />
                   <div>
                     <p className="font-bold text-gray-900">{request.name}</p>
                     <p className="text-sm text-gray-500">Sent you a friend request</p>
@@ -103,10 +138,13 @@ const Friends: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'suggestions' && (
+        {activeTab === "suggestions" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {SUGGESTED_FRIENDS.map(friend => (
-              <div key={friend.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:shadow-md transition-all bg-white group">
+            {SUGGESTED_FRIENDS.map((friend) => (
+              <div
+                key={friend.id}
+                className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:shadow-md transition-all bg-white group"
+              >
                 <div className="flex items-center gap-3">
                   <img src={friend.avatar} className="w-12 h-12 rounded-full object-cover" alt="" />
                   <div>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Maximize2 } from "lucide-react";
-import { Post, Comment } from "../types";
+import { Post, Comment } from "../../types";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
 
