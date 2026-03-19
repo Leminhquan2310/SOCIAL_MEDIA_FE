@@ -14,8 +14,8 @@ import { authApi } from "../utils/apiClient";
 import { API_CONFIG } from "../config/apiConfig";
 
 interface AuthContextType extends AuthState {
-  login: (username: string, password: string) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  login: (data: LoginRequest) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
 }
@@ -29,114 +29,142 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     token: null,
     refreshToken: null,
   });
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  // Check if token exists on mount
+  // Check if token exists on mount or handles OAuth2 redirect
   useEffect(() => {
-    const token = localStorage.getItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
-    const refreshToken = localStorage.getItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
+    const handleAuth = async () => {
+      // 1. Kiểm tra OAuth2 callback từ URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get("accessToken");
 
-    if (token) {
-      setState({
-        user: MOCK_USER,
-        isAuthenticated: true,
-        token: token,
-        refreshToken: refreshToken,
-      });
-    }
+      if (urlToken) {
+        localStorage.setItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY, urlToken);
+        // Xóa token khỏi URL để bảo mật và sạch sẽ
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Cập nhật state và fetch profile
+        await initializeAuth(urlToken);
+      } else {
+        // 2. Kiểm tra token trong localStorage (phiên làm việc cũ)
+        const storedToken = localStorage.getItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
+        if (storedToken) {
+          await initializeAuth(storedToken);
+        } else {
+          setIsInitializing(false);
+        }
+      }
+    };
+
+    handleAuth();
   }, []);
 
   /**
+   * Khởi tạo trạng thái xác thực và lấy thông tin người dùng
+   */
+  const initializeAuth = async (token: string) => {
+    try {
+      // Thiết lập header mặc định cho các request tiếp theo
+      api.defaults.headers.common["Authorization"] = `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${token}`;
+      
+      // Fetch thông tin profile từ server
+      const response = await api.get(API_CONFIG.ENDPOINTS.USER.PROFILE);
+      const userData = response.data.data || response.data;
+      
+      setState({
+        user: userData,
+        isAuthenticated: true,
+        token: token,
+        refreshToken: null,
+      });
+    } catch (error) {
+      console.error("Auth initialization failed:", error);
+      // Xóa token lỗi
+      localStorage.removeItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
+      localStorage.removeItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
+      delete api.defaults.headers.common["Authorization"];
+      
+      setState({
+        user: null,
+        isAuthenticated: false,
+        token: null,
+        refreshToken: null,
+      });
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  /**
    * Register function
-   * Handles user registration with the provided credentials
-   * Note: Does not auto-login after registration. User must login manually.
    */
   const register = async (data: RegisterRequest) => {
     try {
       const response = await authApi.register(data);
-
-      // The API returns { code, message, data: RegisterResponse }
       const responseData = response as ApiResponse<RegisterResponse>;
 
       if (responseData.code === 201 || responseData.code === 200) {
-        // Registration successful - user must login manually
         return responseData.data;
       } else {
         throw new Error(responseData.message || "Registration failed");
       }
     } catch (error) {
-      const errorMessage = handleApiError(error);
-      throw new Error(errorMessage);
+      throw new Error(handleApiError(error));
     }
   };
 
   /**
    * Login function
-   * Authenticates user and stores tokens
    */
-  const login = async (username: string, password: string) => {
+  const login = async (data: LoginRequest) => {
     try {
-      const response = await authApi.login({
-        username,
-        password,
-      });
-
-      // The API returns { code, message, data: LoginResponse }
+      const response = await authApi.login(data);
       const responseData = response as ApiResponse<LoginResponse>;
 
       if (responseData.code === 200) {
         const loginData = responseData.data;
         const accessToken = loginData.accessToken;
+        // Backend có thể không trả RT trong body (đã trả ở Cookie)
         const refreshToken = loginData.refreshToken;
 
-        // Store tokens in localStorage
         localStorage.setItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY, accessToken);
-        localStorage.setItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY, refreshToken);
+        if (refreshToken) {
+          localStorage.setItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY, refreshToken);
+        }
 
-        // Set default authorization header
-        api.defaults.headers.common["Authorization"] =
-          `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${accessToken}`;
-
-        // Create user object from response (minimal info from login)
-        // In real app, fetch full profile from /users/profile endpoint
-        const user: User = {
-          id: username,
-          username: username,
-          email: username, // Placeholder, should fetch actual email
-          fullName: username,
-          avatar: MOCK_USER.avatar || "",
-          bio: "",
-          followers: 0,
-          following: 0,
-        };
-
-        setState({
-          user,
-          isAuthenticated: true,
-          token: accessToken,
-          refreshToken: refreshToken,
-        });
+        await initializeAuth(accessToken);
       } else {
         throw new Error(responseData.message || "Login failed");
       }
     } catch (error) {
-      const errorMessage = handleApiError(error);
-      throw new Error(errorMessage);
+      throw new Error(handleApiError(error));
     }
   };
 
   /**
    * Logout function
-   * Clears user data and tokens
    */
-  const logout = () => {
-    localStorage.clear();
-    delete api.defaults.headers.common["Authorization"];
-    setState({
-      user: null,
-      isAuthenticated: false,
-      token: null,
-      refreshToken: null,
-    });
+  const logout = async () => {
+    try {
+      // Gọi API logout để BE xóa Refresh Token trong DB và xóa Cookie
+      // Vẫn gửi kèm khóa RT dưới dạng JSON gửi lên nếu LocalStorage có chứa (Mobile app style)
+      const storedRefreshToken = localStorage.getItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
+      await authApi.logout({ refreshToken: storedRefreshToken || "" });
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+    } finally {
+      // Xóa dữ liệu cục bộ ngay lập tức để người dùng thoát khỏi phiên
+      localStorage.removeItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
+      localStorage.removeItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
+      delete api.defaults.headers.common["Authorization"];
+      
+      setState({
+        user: null,
+        isAuthenticated: false,
+        token: null,
+        refreshToken: null,
+      });
+    }
   };
 
   /**
@@ -151,7 +179,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ ...state, login, register, logout, updateUser }}>
-      {children}
+      {isInitializing ? (
+        <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-500 font-medium animate-pulse">Initializing Auth...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

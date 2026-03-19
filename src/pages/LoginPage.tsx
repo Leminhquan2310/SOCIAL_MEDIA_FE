@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLoading } from "../contexts/LoadingContext";
 import { handleApiError } from "../services/api";
-import { ShieldCheck, LogIn, AlertCircle } from "lucide-react";
+import { ShieldCheck, LogIn, AlertCircle, Chrome, Facebook } from "lucide-react";
+import { API_CONFIG } from "../config/apiConfig";
 
 /**
  * Login Page
@@ -28,6 +29,17 @@ const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  /**
+   * OAuth2 Redirect Handler
+   * Redirects user to backend authorization endpoint for OAuth login
+   */
+  const handleOAuthRedirect = (provider: "google" | "facebook") => {
+    const baseUri = API_CONFIG.BASE_URL_ORIGIN;
+    // Backend SecurityConfig defines baseUri as /oauth2/authorize
+    const redirectUri = `${baseUri}/oauth2/authorize/${provider}?redirect_uri=${encodeURIComponent(window.location.origin + "/")}`;
+    window.location.href = redirectUri;
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,7 +55,7 @@ const LoginPage: React.FC = () => {
     }
 
     try {
-      await login(loginData.username, loginData.password);
+      await login({ username: loginData.username, password: loginData.password });
       hideLoading();
       // Navigation happens automatically via useEffect watching isAuthenticated
     } catch (err) {
@@ -116,6 +128,34 @@ const LoginPage: React.FC = () => {
           )}
         </button>
       </form>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-px bg-gray-200"></div>
+        <span className="text-gray-500 text-sm font-medium">Or login with</span>
+        <div className="flex-1 h-px bg-gray-200"></div>
+      </div>
+
+      {/* OAuth Buttons */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => handleOAuthRedirect("google")}
+          className="w-full bg-white text-gray-700 font-semibold py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center gap-3 shadow-sm"
+        >
+          <Chrome size={20} className="text-red-500" />
+          Sign in with Google
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleOAuthRedirect("facebook")}
+          className="w-full bg-white text-gray-700 font-semibold py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center gap-3 shadow-sm"
+        >
+          <Facebook size={20} className="text-blue-600" />
+          Sign in with Facebook
+        </button>
+      </div>
 
       <div className="mt-6 text-center">
         <p className="text-gray-600 text-sm">
