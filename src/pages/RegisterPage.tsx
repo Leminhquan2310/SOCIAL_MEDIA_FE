@@ -34,14 +34,6 @@ const RegisterPage: React.FC = () => {
    * Returns error message if validation fails, null if all valid
    */
   const validateForm = (): string | null => {
-    // Validate full name
-    if (!registerData.fullName.trim()) {
-      return "Full name is required";
-    }
-    if (registerData.fullName.trim().length < 2) {
-      return "Full name must be at least 2 characters";
-    }
-
     // Validate username
     if (!registerData.username.trim()) {
       return "Username is required";
@@ -51,14 +43,6 @@ const RegisterPage: React.FC = () => {
     }
     if (!/^[a-zA-Z0-9_-]+$/.test(registerData.username.trim())) {
       return "Username can only contain letters, numbers, underscores, and hyphens";
-    }
-
-    // Validate email
-    if (!registerData.email.trim()) {
-      return "Email is required";
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email.trim())) {
-      return "Please enter a valid email address";
     }
 
     // Validate password
@@ -97,11 +81,11 @@ const RegisterPage: React.FC = () => {
     }
 
     try {
-      // Prepare registration data
+      // Prepare registration data (minimal)
       const registrationData: RegisterRequest = {
-        fullName: registerData.fullName.trim(),
+        fullName: registerData.fullName.trim() || "",
         username: registerData.username.trim(),
-        email: registerData.email.trim(),
+        email: registerData.email.trim() || "",
         password: registerData.password,
         confirmPassword: registerData.confirmPassword,
         dateOfBirth: registerData.dateOfBirth || "",
@@ -162,21 +146,6 @@ const RegisterPage: React.FC = () => {
 
       {/* Registration Form */}
       <form onSubmit={handleRegisterSubmit} className="space-y-4">
-        {/* Full Name */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
-          <input
-            type="text"
-            name="fullName"
-            required
-            disabled={loading}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all disabled:bg-gray-50"
-            placeholder="e.g., Nguyễn Văn Ti"
-            value={registerData.fullName}
-            onChange={handleInputChange}
-          />
-        </div>
-
         {/* Username */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">Username</label>
@@ -191,23 +160,8 @@ const RegisterPage: React.FC = () => {
             onChange={handleInputChange}
           />
           <p className="text-xs text-gray-500 mt-1">
-            Only letters, numbers, underscores, and hyphens
+            Only letters, numbers, underscores, and hyphens (min 3 chars)
           </p>
-        </div>
-
-        {/* Email */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            required
-            disabled={loading}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all disabled:bg-gray-50"
-            placeholder="e.g., nguyenvanti2@gmail.com"
-            value={registerData.email}
-            onChange={handleInputChange}
-          />
         </div>
 
         {/* Password */}
@@ -241,17 +195,39 @@ const RegisterPage: React.FC = () => {
           />
         </div>
 
-        {/* Optional Fields */}
+        {/* Optional Fields Toggle */}
         <div className="pt-2">
           <details className="text-sm">
             <summary className="cursor-pointer text-gray-600 font-medium hover:text-gray-900">
               Additional Information (Optional)
             </summary>
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Date of Birth
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  disabled={loading}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm disabled:bg-gray-50"
+                  placeholder="e.g., Nguyễn Văn Ti"
+                  value={registerData.fullName}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  disabled={loading}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm disabled:bg-gray-50"
+                  placeholder="e.g., mail@example.com"
+                  value={registerData.email}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Date of Birth</label>
                 <input
                   type="date"
                   name="dateOfBirth"
@@ -262,15 +238,13 @@ const RegisterPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Phone Number
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Phone Number</label>
                 <input
                   type="tel"
                   name="phone"
                   disabled={loading}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm disabled:bg-gray-50"
-                  placeholder="+84000000000"
+                  placeholder="+84..."
                   value={registerData.phone}
                   onChange={handleInputChange}
                 />

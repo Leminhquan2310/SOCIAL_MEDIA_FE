@@ -5,6 +5,7 @@
 
 export const API_CONFIG = {
   // Base API URL - read from environment or use default
+  BASE_URL_ORIGIN: import.meta.env.VITE_API_BASE_URL_ORIGIN || "https://api.nexus-social.mock/v1",
   BASE_URL: import.meta.env.VITE_API_BASE_URL || "https://api.nexus-social.mock/v1",
 
   // Timeout duration in milliseconds
@@ -23,7 +24,7 @@ export const API_CONFIG = {
 
     // User endpoints
     USER: {
-      PROFILE: "/users/profile",
+      PROFILE: "/auth/me",
       GET_USER: (id: string) => `/users/${id}`,
       UPDATE_PROFILE: "/users/profile/update",
       GET_FOLLOWERS: (id: string) => `/users/${id}/followers`,
@@ -109,6 +110,7 @@ export const API_CONFIG = {
     ACCESS_TOKEN_KEY: "access_token",
     REFRESH_TOKEN_KEY: "refresh_token",
     TOKEN_PREFIX: "Bearer",
+    WITH_CREDENTIALS: true,
   },
 
   // Environment

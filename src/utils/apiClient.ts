@@ -1,6 +1,7 @@
 import api, { handleApiError } from "../services/api";
 import { API_CONFIG } from "../config/apiConfig";
 import { AxiosRequestConfig } from "axios";
+import { ApiResponse, LoginRequest } from "../../types";
 
 /**
  * API Request Utilities
@@ -86,10 +87,10 @@ export const apiDelete = async <T = unknown>(
  * Authentication Utilities
  */
 export const authApi = {
-  login: async (credentials: { username: string; password: string }) =>
-    apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGIN, credentials),
+  login: async (credentials: LoginRequest) => apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGIN, credentials),
 
-  logout: async () => apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGOUT),
+  logout: async (credentials: { refreshToken: String }): Promise<ApiResponse<Object>> =>
+    apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, credentials),
 
   register: async (data: {
     fullName: string;

@@ -20,6 +20,7 @@ const api: AxiosInstance = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
   headers: API_CONFIG.HEADERS,
+  withCredentials: API_CONFIG.TOKEN.WITH_CREDENTIALS,
 });
 
 /**
@@ -45,6 +46,26 @@ api.interceptors.request.use(
     return Promise.reject(error);
   },
 );
+
+// Custom types for queue
+interface FailedRequestQueue {
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}
+
+let isRefreshing = false;
+let failedQueue: FailedRequestQueue[] = [];
+
+const processQueue = (error: AxiosError | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 /**
  * Response Interceptor
@@ -73,48 +94,77 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized - Token Refresh
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // Bỏ qua nếu chính endpoint login hoặc register bị 401
+      if (
+        originalRequest.url?.includes(API_CONFIG.ENDPOINTS.AUTH.LOGIN) ||
+        originalRequest.url?.includes(API_CONFIG.ENDPOINTS.AUTH.REGISTER) ||
+        originalRequest.url?.includes(API_CONFIG.ENDPOINTS.AUTH.REFRESH)
+      ) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${token}`;
+            }
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = 1;
+      isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
-
-        if (!refreshToken) {
-          // No refresh token available, redirect to login
-          localStorage.clear();
-          window.location.href = "#/login";
-          return Promise.reject(error);
-        }
-
-        // Call refresh token endpoint
+        // Lấy RT từ localStorage cho Mobile Client (nếu có). Web sẽ dùng Cookie tự động.
+        const storedRefreshToken = localStorage.getItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
+        
+        // Gọi refresh token endpoint.
         const response = await axios.post(
           `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`,
-          { refreshToken: refreshToken },
+          { refreshToken: storedRefreshToken }, // Data body
+          { withCredentials: true } // Axios Config phải nằm ở tham số thứ 3
         );
 
         const newAccessToken = response.data.data?.accessToken || response.data.accessToken;
-        const newRefreshToken = response.data.data?.refreshToken || response.data.refreshToken;
 
-        // Update stored tokens
+        // Lưu Access Token mới
         localStorage.setItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY, newAccessToken);
+
+        // NẾU BE trả về RT mới qua body, lưu lại để dự phòng (bthg BE sẽ set Cookie)
+        const newRefreshToken = response.data.data?.refreshToken || response.data.refreshToken;
         if (newRefreshToken) {
-          localStorage.setItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY, newRefreshToken);
+           localStorage.setItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY, newRefreshToken);
         }
 
-        // Update default header
+        // Update default header cho các request tương lai
         api.defaults.headers.common["Authorization"] =
           `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${newAccessToken}`;
 
-        // Retry original request with new token
+        processQueue(null, newAccessToken);
+
+        // Retry request cũ với token mới
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${newAccessToken}`;
         }
 
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear storage and redirect to login
-        localStorage.clear();
-        window.location.href = "#/login";
+        // Refresh thất bại (RT hết hạn hoặc bị thu hồi)
+        processQueue(refreshError as AxiosError, null);
+        
+        localStorage.removeItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
+        localStorage.removeItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
+        delete api.defaults.headers.common["Authorization"];
+        
+        window.location.href = "/login";
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

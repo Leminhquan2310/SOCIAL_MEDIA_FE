@@ -55,7 +55,7 @@ export interface ApiResponse<T> {
 // ============================================================================
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
   fullName?: string;
