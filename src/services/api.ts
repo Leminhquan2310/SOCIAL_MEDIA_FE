@@ -23,16 +23,28 @@ const api: AxiosInstance = axios.create({
   withCredentials: API_CONFIG.TOKEN.WITH_CREDENTIALS,
 });
 
+let accessTokenMemory: string | null = null;
+
+/**
+ * Update the access token stored in memory
+ */
+export const setAccessToken = (token: string | null) => {
+  accessTokenMemory = token;
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+  }
+};
+
 /**
  * Request Interceptor
- * Add JWT token to authorization header
+ * Add JWT token to authorization header from memory
  */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
-
-    if (token) {
-      config.headers.Authorization = `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${token}`;
+    if (accessTokenMemory) {
+      config.headers.Authorization = `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${accessTokenMemory}`;
     }
 
     // Log requests in development
@@ -69,7 +81,7 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
 
 /**
  * Response Interceptor
- * Handle token refresh and retry logic
+ * Handle token refresh via HttpOnly Cookie and retry logic
  */
 api.interceptors.response.use(
   (response) => {
@@ -120,30 +132,18 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Lấy RT từ localStorage cho Mobile Client (nếu có). Web sẽ dùng Cookie tự động.
-        const storedRefreshToken = localStorage.getItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
-        
-        // Gọi refresh token endpoint.
+        // Gọi refresh token endpoint. 
+        // Trình duyệt sẽ tự động đính kèm HttpOnly Cookie "refreshToken" nhờ withCredentials: true
         const response = await axios.post(
           `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`,
-          { refreshToken: storedRefreshToken }, // Data body
-          { withCredentials: true } // Axios Config phải nằm ở tham số thứ 3
+          {}, // Không cần gửi body nữa vì RT nằm trong Cookie
+          { withCredentials: true }
         );
 
         const newAccessToken = response.data.data?.accessToken || response.data.accessToken;
 
-        // Lưu Access Token mới
-        localStorage.setItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY, newAccessToken);
-
-        // NẾU BE trả về RT mới qua body, lưu lại để dự phòng (bthg BE sẽ set Cookie)
-        const newRefreshToken = response.data.data?.refreshToken || response.data.refreshToken;
-        if (newRefreshToken) {
-           localStorage.setItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY, newRefreshToken);
-        }
-
-        // Update default header cho các request tương lai
-        api.defaults.headers.common["Authorization"] =
-          `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${newAccessToken}`;
+        // Lưu Access Token mới vào bộ nhớ
+        setAccessToken(newAccessToken);
 
         processQueue(null, newAccessToken);
 
@@ -157,10 +157,9 @@ api.interceptors.response.use(
         // Refresh thất bại (RT hết hạn hoặc bị thu hồi)
         processQueue(refreshError as AxiosError, null);
         
-        localStorage.removeItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
-        localStorage.removeItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
-        delete api.defaults.headers.common["Authorization"];
+        setAccessToken(null);
         
+        // Redirect về login nếu refresh thất bại hoàn toàn
         window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {

@@ -107,8 +107,6 @@ export const API_CONFIG = {
 
   // Token configuration
   TOKEN: {
-    ACCESS_TOKEN_KEY: "access_token",
-    REFRESH_TOKEN_KEY: "refresh_token",
     TOKEN_PREFIX: "Bearer",
     WITH_CREDENTIALS: true,
   },

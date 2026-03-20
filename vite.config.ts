@@ -11,11 +11,16 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: "0.0.0.0",
+      https: {
+        key: path.resolve(__dirname, "certs/key.pem"),
+        cert: path.resolve(__dirname, "certs/cert.pem"),
+      },
       // Proxy API requests to avoid CORS issues in development
       proxy: {
         "/api": {
-          target: env.VITE_API_BASE_URL || "https://api.nexus-social.mock/v1",
+          target: env.VITE_API_BASE_URL || "https://localhost:8080/v1",
           changeOrigin: true,
+          secure: false, // Vì là tự ký (self-signed) nên cần để false để không check CA
           rewrite: (path) => path.replace(/^\/api/, ""),
         },
       },

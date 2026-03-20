@@ -89,8 +89,8 @@ export const apiDelete = async <T = unknown>(
 export const authApi = {
   login: async (credentials: LoginRequest) => apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGIN, credentials),
 
-  logout: async (credentials: { refreshToken: String }): Promise<ApiResponse<Object>> =>
-    apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, credentials),
+  logout: async (): Promise<ApiResponse<Object>> =>
+    apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, {}),
 
   register: async (data: {
     fullName: string;
@@ -103,8 +103,8 @@ export const authApi = {
     role?: string;
   }) => apiPost(API_CONFIG.ENDPOINTS.AUTH.REGISTER, data),
 
-  refreshToken: async (refreshToken: string) =>
-    apiPost(API_CONFIG.ENDPOINTS.AUTH.REFRESH, { refreshToken }),
+  refreshToken: async () =>
+    apiPost(API_CONFIG.ENDPOINTS.AUTH.REFRESH, {}),
 
   verifyEmail: async (token: string) => apiPost(API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL, { token }),
 };
