@@ -26,6 +26,7 @@ export const API_CONFIG = {
       PROFILE: "/auth/me",
       GET_USER: (id: string) => `/users/${id}`,
       UPDATE_PROFILE: "/users/profile/update",
+      UPDATE_AVATAR: "/users/profile/avatar",
       GET_FOLLOWERS: (id: string) => `/users/${id}/followers`,
       GET_FOLLOWING: (id: string) => `/users/${id}/following`,
       FOLLOW: (id: string) => `/users/${id}/follow`,

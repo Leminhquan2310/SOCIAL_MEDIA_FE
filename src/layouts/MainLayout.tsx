@@ -37,6 +37,9 @@ const MainLayout: React.FC = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  console.log("user: ", user);
+
+
   // Close notification dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -85,7 +88,7 @@ const MainLayout: React.FC = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-[1536px] mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -118,11 +121,10 @@ const MainLayout: React.FC = () => {
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className={`relative p-2 rounded-full transition-all ${
-                  isNotifOpen ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"
-                }`}
+                className={`relative p-2 rounded-full transition-all ${isNotifOpen ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"
+                  }`}
               >
-                <Bell size={22} />
+                <Bell size={20} />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
 
@@ -180,7 +182,7 @@ const MainLayout: React.FC = () => {
               className="hidden sm:block p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all"
               title="Messages"
             >
-              <MessageSquare size={22} />
+              <MessageSquare size={20} />
             </Link>
             <div className="h-8 w-[1px] bg-gray-200 hidden sm:block"></div>
             <Link
@@ -188,12 +190,12 @@ const MainLayout: React.FC = () => {
               className="flex items-center gap-2 pl-2 hover:opacity-80 transition-opacity"
             >
               <img
-                src={user?.avatar}
+                src={user?.avatarUrl}
                 className="w-8 h-8 rounded-full border border-gray-100"
-                alt=""
+                alt={user?.fullName}
               />
               <span className="font-bold text-sm hidden sm:block">
-                {user?.username.split(" ")[0]}
+                {user?.fullName}
               </span>
             </Link>
           </div>
@@ -201,11 +203,11 @@ const MainLayout: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="max-w-[1536px] mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Sidebar */}
         <div
           className={`
-          lg:col-span-3 lg:block
+          lg:col-span-2 lg:block
           ${isMobileMenuOpen ? "fixed inset-0 z-50 bg-white p-4 shadow-2xl overflow-y-auto" : "hidden"}
         `}
         >
@@ -221,79 +223,75 @@ const MainLayout: React.FC = () => {
         </div>
 
         {/* Page Content */}
-        <main className="lg:col-span-6 md:col-span-12 min-h-screen">
+        <main className="lg:col-span-7 md:col-span-12 min-h-screen">
           <Outlet />
         </main>
 
         {/* Suggested Friends Sidebar */}
         <aside className="lg:col-span-3 hidden lg:block space-y-6">
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 sticky top-24">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-800">Suggested For You</h3>
-              <Link to="/friends" className="text-xs font-bold text-blue-600 hover:underline">
-                See All
+          <div className="bg-white rounded-xl shadow-sm p-3.5 border border-gray-100 sticky top-24">
+            <div className="flex items-center justify-between mb-4 px-1">
+              <h3 className="font-bold text-gray-800 text-sm">Gợi ý cho bạn</h3>
+              <Link to="/friends" className="text-[11px] font-bold text-blue-600 hover:underline">
+                Xem tất cả
               </Link>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {SUGGESTED_FRIENDS.map((friend) => (
-                <div key={friend.id} className="flex items-center justify-between group">
+                <div key={friend.id} className="flex items-center justify-between group px-1">
                   <Link
                     to={`/profile/${friend.id}`}
-                    className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity min-w-0"
                   >
                     <img
                       src={friend.avatar}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-8 h-8 rounded-full object-cover ring-1 ring-gray-50 shadow-sm"
                       alt=""
                     />
                     <div className="overflow-hidden">
-                      <p className="font-bold text-sm truncate">{friend.name}</p>
-                      <p className="text-xs text-gray-500">@{friend.username}</p>
+                      <p className="font-bold text-[13px] truncate">{friend.name}</p>
+                      <p className="text-[10px] text-gray-400">@{friend.username}</p>
                     </div>
                   </Link>
-                  <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95">
-                    <UserPlus size={18} />
+                  <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95 shrink-0">
+                    <UserPlus size={16} />
                   </button>
                 </div>
               ))}
             </div>
 
             <div className="mt-8 border-t border-gray-50 pt-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-800">Online Friends</h3>
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h3 className="font-bold text-gray-800 text-sm">Bạn bè trực tuyến</h3>
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {ONLINE_FRIENDS.map((friend) => (
                   <Link
                     to={`/profile/${friend.id}`}
                     key={friend.id}
-                    className="flex items-center gap-3 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2.5 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="relative">
                       <img
                         src={friend.avatar}
-                        className="w-10 h-10 rounded-full object-cover shadow-sm"
+                        className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-gray-50"
                         alt=""
                       />
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
                     </div>
                     <div className="flex-1 overflow-hidden">
-                      <p className="font-bold text-sm truncate">{friend.name}</p>
-                      <p className="text-[10px] text-green-600 font-medium">Active now</p>
+                      <p className="font-bold text-[13px] truncate">{friend.name}</p>
+                      <p className="text-[9px] text-green-600 font-bold uppercase tracking-wider">Online</p>
                     </div>
                   </Link>
                 ))}
               </div>
             </div>
 
-            <div className="mt-8 px-2 text-[10px] text-gray-400 font-medium space-x-2">
-              <Link to="/privacy" className="hover:underline">
-                Privacy
-              </Link>
-              <Link to="/terms" className="hover:underline">
-                Terms
-              </Link>
+            <div className="mt-8 px-1 text-[10px] text-gray-400 font-medium space-x-2 border-t border-gray-50 pt-4">
+              <Link to="/privacy" className="hover:underline">Bảo mật</Link>
+              <Link to="/terms" className="hover:underline">Điều khoản</Link>
               <span>© 2024 NexusSocial</span>
             </div>
           </div>
