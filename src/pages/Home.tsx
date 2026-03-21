@@ -85,7 +85,7 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="animate-fade-in space-y-6">
       <CreatePost onPostCreated={handlePostCreated} />
 
       <div className="space-y-6">
@@ -94,9 +94,9 @@ const Home: React.FC = () => {
         ))}
       </div>
 
-      <div className="text-center py-8">
-        <button className="px-6 py-2 bg-white text-blue-600 font-semibold rounded-full shadow-sm hover:shadow-md transition-all border border-blue-50">
-          Load More Posts
+      <div className="text-center py-10">
+        <button className="px-8 py-2.5 bg-white text-blue-600 font-bold text-sm rounded-full shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all border border-blue-50 active:scale-95">
+          Xem thêm bài viết
         </button>
       </div>
     </div>

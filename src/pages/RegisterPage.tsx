@@ -45,6 +45,19 @@ const RegisterPage: React.FC = () => {
       return "Username can only contain letters, numbers, underscores, and hyphens";
     }
 
+    // Validate email
+    if (!registerData.email.trim()) {
+      return "Email is required";
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email.trim())) {
+      return "Invalid email format";
+    }
+
+    // Validate full name
+    if (!registerData.fullName.trim()) {
+      return "Full Name is required";
+    }
+
     // Validate password
     if (!registerData.password) {
       return "Password is required";
@@ -164,6 +177,36 @@ const RegisterPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Full Name */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+          <input
+            type="text"
+            name="fullName"
+            required
+            disabled={loading}
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all disabled:bg-gray-50"
+            placeholder="e.g., Nguyễn Văn Ti"
+            value={registerData.fullName}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        {/* Email */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            name="email"
+            required
+            disabled={loading}
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all disabled:bg-gray-50"
+            placeholder="e.g., mail@example.com"
+            value={registerData.email}
+            onChange={handleInputChange}
+          />
+        </div>
+
         {/* Password */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
@@ -202,30 +245,6 @@ const RegisterPage: React.FC = () => {
               Additional Information (Optional)
             </summary>
             <div className="mt-3 space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  disabled={loading}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm disabled:bg-gray-50"
-                  placeholder="e.g., Nguyễn Văn Ti"
-                  value={registerData.fullName}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  disabled={loading}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm disabled:bg-gray-50"
-                  placeholder="e.g., mail@example.com"
-                  value={registerData.email}
-                  onChange={handleInputChange}
-                />
-              </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Date of Birth</label>
                 <input

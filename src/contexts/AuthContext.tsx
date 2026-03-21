@@ -8,8 +8,7 @@ import {
   RegisterResponse,
   ApiResponse,
 } from "../../types";
-import { MOCK_USER } from "../../constants";
-import api, { handleApiError } from "../services/api";
+import api, { handleApiError, setAccessToken } from "../services/api";
 import { authApi } from "../utils/apiClient";
 import { API_CONFIG } from "../config/apiConfig";
 
@@ -31,59 +30,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Check if token exists on mount or handles OAuth2 redirect
+  // Silent Refresh on mount (handles page reload & OAuth2 redirect)
   useEffect(() => {
-    const handleAuth = async () => {
-      // 1. Kiểm tra OAuth2 callback từ URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlToken = urlParams.get("accessToken");
-
-      if (urlToken) {
-        localStorage.setItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY, urlToken);
-        // Xóa token khỏi URL để bảo mật và sạch sẽ
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        // Cập nhật state và fetch profile
-        await initializeAuth(urlToken);
-      } else {
-        // 2. Kiểm tra token trong localStorage (phiên làm việc cũ)
-        const storedToken = localStorage.getItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
-        if (storedToken) {
-          await initializeAuth(storedToken);
-        } else {
-          setIsInitializing(false);
-        }
-      }
+    const handleInitialAuth = async () => {
+      // Vì tokens không còn nằm trong URL hay localStorage, 
+      // chúng ta chỉ đơn giản thử gọi refresh token.
+      // Trình duyệt sẽ tự động gửi kèm HttpOnly Cookie nếu có.
+      await refreshAuth();
     };
 
-    handleAuth();
+    handleInitialAuth();
   }, []);
 
   /**
-   * Khởi tạo trạng thái xác thực và lấy thông tin người dùng
+   * Khởi tạo trạng thái xác thực bằng cách gọi Refresh Token (Silent Refresh)
    */
-  const initializeAuth = async (token: string) => {
+  const refreshAuth = async () => {
     try {
-      // Thiết lập header mặc định cho các request tiếp theo
-      api.defaults.headers.common["Authorization"] = `${API_CONFIG.TOKEN.TOKEN_PREFIX} ${token}`;
+      // Thử gọi API Refresh Token (với withCredentials: true đã set mặc định trong api.ts bundle)
+      const response = await api.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH);
+      const { accessToken } = response.data.data || response.data;
       
-      // Fetch thông tin profile từ server
-      const response = await api.get(API_CONFIG.ENDPOINTS.USER.PROFILE);
-      const userData = response.data.data || response.data;
+      // Lưu AT vào bộ nhớ (api instance)
+      setAccessToken(accessToken);
+      
+      // Fetch profile
+      const userResponse = await api.get(API_CONFIG.ENDPOINTS.USER.PROFILE);
+      const userData = userResponse.data.data || userResponse.data;
       
       setState({
         user: userData,
         isAuthenticated: true,
-        token: token,
-        refreshToken: null,
+        token: accessToken,
+        refreshToken: null, // RT nằm trong HttpOnly Cookie
       });
     } catch (error) {
-      console.error("Auth initialization failed:", error);
-      // Xóa token lỗi
-      localStorage.removeItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
-      localStorage.removeItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
-      delete api.defaults.headers.common["Authorization"];
-      
+      // Nếu refresh thất bại (ví dụ: chưa đăng nhập hoặc RT hết hạn)
+      setAccessToken(null);
       setState({
         user: null,
         isAuthenticated: false,
@@ -113,26 +96,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  /**
-   * Login function
-   */
   const login = async (data: LoginRequest) => {
     try {
       const response = await authApi.login(data);
       const responseData = response as ApiResponse<LoginResponse>;
 
       if (responseData.code === 200) {
-        const loginData = responseData.data;
-        const accessToken = loginData.accessToken;
-        // Backend có thể không trả RT trong body (đã trả ở Cookie)
-        const refreshToken = loginData.refreshToken;
+        const { accessToken } = responseData.data;
 
-        localStorage.setItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY, accessToken);
-        if (refreshToken) {
-          localStorage.setItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY, refreshToken);
-        }
+        // Lưu Access Token vào bộ nhớ (instance axios)
+        setAccessToken(accessToken);
 
-        await initializeAuth(accessToken);
+        // Fetch profile ngay lập tức
+        const userResponse = await api.get(API_CONFIG.ENDPOINTS.USER.PROFILE);
+        const userData = userResponse.data.data || userResponse.data;
+
+        setState({
+          user: userData,
+          isAuthenticated: true,
+          token: accessToken,
+          refreshToken: null,
+        });
       } else {
         throw new Error(responseData.message || "Login failed");
       }
@@ -141,22 +125,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  /**
-   * Logout function
-   */
   const logout = async () => {
     try {
-      // Gọi API logout để BE xóa Refresh Token trong DB và xóa Cookie
-      // Vẫn gửi kèm khóa RT dưới dạng JSON gửi lên nếu LocalStorage có chứa (Mobile app style)
-      const storedRefreshToken = localStorage.getItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
-      await authApi.logout({ refreshToken: storedRefreshToken || "" });
+      // BE sẽ xóa Refresh Token trong DB và xóa Cookie
+      await authApi.logout(); // RT được lấy từ Cookie ở BE
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
-      // Xóa dữ liệu cục bộ ngay lập tức để người dùng thoát khỏi phiên
-      localStorage.removeItem(API_CONFIG.TOKEN.ACCESS_TOKEN_KEY);
-      localStorage.removeItem(API_CONFIG.TOKEN.REFRESH_TOKEN_KEY);
-      delete api.defaults.headers.common["Authorization"];
+      // Xóa dữ liệu bộ nhớ
+      setAccessToken(null);
       
       setState({
         user: null,

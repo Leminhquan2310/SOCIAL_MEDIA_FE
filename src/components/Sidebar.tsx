@@ -24,39 +24,39 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogoutClick }) => {
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 sticky top-6">
-      <div className="flex items-center gap-3 mb-8 px-2">
+    <div className="bg-white rounded-xl shadow-sm p-3 sticky top-24 border border-gray-50">
+      <div className="flex items-center gap-2.5 mb-6 px-1">
         <img
-          src={user?.avatar}
-          alt={user?.name}
-          className="w-12 h-12 rounded-full border-2 border-blue-500"
+          src={user?.avatarUrl}
+          alt={user?.fullName}
+          className="w-10 h-10 rounded-full border-2 border-blue-500 shadow-sm"
         />
         <div className="overflow-hidden">
-          <h2 className="font-bold text-gray-800 truncate">{user?.name}</h2>
-          <p className="text-sm text-gray-500">@{user?.username}</p>
+          <h2 className="font-bold text-gray-800 text-sm truncate">{user?.fullName}</h2>
+          <p className="text-[11px] text-gray-400">@{user?.username}</p>
         </div>
       </div>
 
-      <nav className="space-y-1">
+      <nav className="space-y-0.5">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.label}
               to={item.path}
-              className="flex items-center gap-4 p-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-all"
+              className="flex items-center gap-3 p-2.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-all"
             >
-              <Icon size={22} />
-              <span className="font-medium">{item.label}</span>
+              <Icon size={18} />
+              <span className="font-semibold text-[13.5px]">{item.label}</span>
             </Link>
           );
         })}
         <button
           onClick={onLogoutClick}
-          className="w-full flex items-center gap-4 p-3 text-red-500 hover:bg-red-50 rounded-lg transition-all mt-4"
+          className="w-full flex items-center gap-3 p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-all mt-4"
         >
-          <LogOut size={22} />
-          <span className="font-medium">Logout</span>
+          <LogOut size={18} />
+          <span className="font-semibold text-[13.5px]">Logout</span>
         </button>
       </nav>
     </div>

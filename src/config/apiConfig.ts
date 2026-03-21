@@ -19,7 +19,6 @@ export const API_CONFIG = {
       LOGOUT: "/auth/logout",
       REFRESH: "/auth/refresh-token",
       REGISTER: "/auth/register",
-      VERIFY_EMAIL: "/auth/verify-email",
     },
 
     // User endpoints
@@ -27,6 +26,7 @@ export const API_CONFIG = {
       PROFILE: "/auth/me",
       GET_USER: (id: string) => `/users/${id}`,
       UPDATE_PROFILE: "/users/profile/update",
+      UPDATE_AVATAR: "/users/profile/avatar",
       GET_FOLLOWERS: (id: string) => `/users/${id}/followers`,
       GET_FOLLOWING: (id: string) => `/users/${id}/following`,
       FOLLOW: (id: string) => `/users/${id}/follow`,
@@ -107,8 +107,6 @@ export const API_CONFIG = {
 
   // Token configuration
   TOKEN: {
-    ACCESS_TOKEN_KEY: "access_token",
-    REFRESH_TOKEN_KEY: "refresh_token",
     TOKEN_PREFIX: "Bearer",
     WITH_CREDENTIALS: true,
   },
