@@ -19,7 +19,6 @@ export const API_CONFIG = {
       LOGOUT: "/auth/logout",
       REFRESH: "/auth/refresh-token",
       REGISTER: "/auth/register",
-      VERIFY_EMAIL: "/auth/verify-email",
     },
 
     // User endpoints
