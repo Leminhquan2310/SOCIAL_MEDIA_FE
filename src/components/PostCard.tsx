@@ -1,20 +1,27 @@
 import React, { useState } from "react";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Maximize2 } from "lucide-react";
-import { Post, Comment } from "../../types";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Globe, Users, Lock } from "lucide-react";
+import { Post } from "../../types";
+import { Privacy } from "../../types";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
+import PostCarousel from "./post/PostCarousel";
+import DOMPurify from "dompurify";
 
 interface PostCardProps {
   post: Post;
   onLike: (postId: string) => void;
   onAddComment: (postId: string, content: string) => void;
+  onEdit?: (post: Post) => void;
+  onDelete?: (postId: string) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit, onDelete }) => {
   const { user } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
+  const [showOptions, setShowOptions] = useState(false);
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,51 +30,106 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
     setCommentText("");
   };
 
+  const openImageModal = (url: string) => {
+    setSelectedImageUrl(url);
+    setIsImageModalOpen(true);
+  };
+
+  const getPrivacyIcon = (privacy: Privacy) => {
+    switch (privacy) {
+      case Privacy.PUBLIC:
+        return <Globe size={12} className="text-gray-400" />;
+      case Privacy.FRIEND_ONLY:
+        return <Users size={12} className="text-gray-400" />;
+      case Privacy.ONLY_ME:
+        return <Lock size={12} className="text-gray-400" />;
+      default:
+        return null;
+    }
+  };
+
+  const isAuthor = user?.id?.toString() === post.userId?.toString();
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md hover:border-gray-200">
       {/* Header */}
-      <div className="p-3.5 flex items-center justify-between">
+      <div className="p-3.5 flex items-center justify-between relative">
         <a href={`#/profile/${post.userId}`} className="flex items-center gap-2.5 group">
           <img
-            src={post.author.avatar}
-            alt={post.author.name}
-            className="w-9 h-9 rounded-full object-cover group-hover:opacity-80 transition-opacity ring-1 ring-gray-100"
+            src={post.author.avatarUrl || post.author.avatar}
+            alt={post.author.fullName || post.author.name}
+            className="w-10 h-10 rounded-full object-cover group-hover:opacity-80 transition-opacity ring-1 ring-gray-100 shadow-sm"
           />
           <div>
-            <h4 className="font-bold text-[13.5px] text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">
-              {post.author.name}
-            </h4>
-            <p className="text-[11px] text-gray-400 mt-0.5">
-              {formatDistanceToNow(new Date(post.createdAt))} trước
-            </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h4 className="font-bold text-[14px] text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">
+                {post.author.fullName || post.author.name}
+              </h4>
+              {post.feeling && (
+                <span className="text-[13px] text-gray-500 font-normal">
+                  đang cảm thấy <span className="font-semibold text-gray-700">{post.feeling}</span>
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[11.5px] text-gray-400">
+                {formatDistanceToNow(new Date(post.createdAt))} trước
+              </p>
+              <span className="text-gray-300 text-[10px]">•</span>
+              {getPrivacyIcon(post.privacy)}
+            </div>
           </div>
         </a>
-        <button className="text-gray-400 hover:bg-gray-50 p-1.5 rounded-full transition-colors">
-          <MoreHorizontal size={18} />
-        </button>
+
+        <div className="relative">
+          <button 
+            onClick={() => setShowOptions(!showOptions)}
+            className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition-colors"
+          >
+            <MoreHorizontal size={20} />
+          </button>
+          
+          {showOptions && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowOptions(false)} />
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-1.5 z-20 animate-fade-in">
+                {isAuthor ? (
+                  <>
+                    <button 
+                      onClick={() => { onEdit?.(post); setShowOptions(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      Sửa bài viết
+                    </button>
+                    <button 
+                      onClick={() => { onDelete?.(post.id); setShowOptions(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    >
+                      Xóa bài viết
+                    </button>
+                  </>
+                ) : (
+                  <button className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                    Báo cáo vi phạm
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Content */}
       <div className="px-4 pb-3">
-        <p className="text-gray-700 text-[14.5px] whitespace-pre-wrap leading-relaxed">{post.content}</p>
+        <div 
+          className="text-gray-800 text-[15px] leading-relaxed post-content"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+        />
       </div>
 
-      {post.image && (
-        <div
-          className="relative group cursor-pointer overflow-hidden border-y border-gray-50"
-          onClick={() => setIsImageModalOpen(true)}
-        >
-          <img
-            src={post.image}
-            alt="post content"
-            className="w-full max-h-[600px] object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-          />
-          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="bg-white/30 backdrop-blur-md p-2.5 rounded-full text-white">
-              <Maximize2 size={20} />
-            </div>
-          </div>
-        </div>
+      {/* Multi-image Carousel */}
+      {post.images && post.images.length > 0 && (
+        <PostCarousel images={post.images} onImageClick={openImageModal} />
       )}
 
       {/* Actions */}
@@ -75,24 +137,27 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
         <div className="flex items-center gap-1">
           <button
             onClick={() => onLike(post.id)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all active:scale-95 ${post.isLiked ? "text-rose-500 bg-rose-50" : "text-gray-500 hover:bg-gray-50"
-              }`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all active:scale-95 ${
+              post.isLiked ? "text-rose-500 bg-rose-50" : "text-gray-500 hover:bg-gray-50"
+            }`}
           >
-            <Heart size={18} fill={post.isLiked ? "currentColor" : "none"} />
-            <span className="font-bold text-[13px]">{post.likes}</span>
+            <Heart size={20} fill={post.isLiked ? "currentColor" : "none"} />
+            <span className="font-bold text-[13.5px]">{post.likes}</span>
           </button>
 
           <button
             onClick={() => setShowComments(!showComments)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${showComments ? "text-blue-600 bg-blue-50" : "text-gray-500 hover:bg-gray-50"
-              }`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+              showComments ? "text-blue-600 bg-blue-50" : "text-gray-500 hover:bg-gray-50"
+            }`}
           >
-            <MessageCircle size={18} />
-            <span className="font-bold text-[13px]">{post.commentCount}</span>
+            <MessageCircle size={20} />
+            <span className="font-bold text-[13.5px]">{post.commentCount}</span>
           </button>
 
           <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 transition-all">
-            <Share2 size={18} />
+            <Share2 size={20} />
+            <span className="font-bold text-[13.5px]">Chia sẻ</span>
           </button>
         </div>
       </div>
@@ -106,7 +171,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
                 <a href={`#/profile/${comment.userId}`} className="shrink-0 mt-1">
                   <img
                     src={comment.userAvatar}
-                    className="w-7 h-7 rounded-full border border-gray-100 shadow-sm"
+                    className="w-8 h-8 rounded-full border border-gray-100 shadow-sm object-cover"
                     alt=""
                   />
                 </a>
@@ -114,7 +179,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
                   <div className="flex justify-between items-center mb-0.5">
                     <a
                       href={`#/profile/${comment.userId}`}
-                      className="font-bold text-[12px] text-gray-900 hover:underline"
+                      className="font-bold text-[12.5px] text-gray-900 hover:underline"
                     >
                       {comment.userName}
                     </a>
@@ -122,7 +187,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
                       {formatDistanceToNow(new Date(comment.createdAt))}
                     </span>
                   </div>
-                  <p className="text-[13px] text-gray-700 leading-normal">{comment.content}</p>
+                  <p className="text-[13.5px] text-gray-700 leading-normal">{comment.content}</p>
                 </div>
               </div>
             ))}
@@ -134,21 +199,21 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
           </div>
 
           <form onSubmit={handleCommentSubmit} className="flex gap-2 mt-2">
-            <img src={user?.avatarUrl} className="w-7 h-7 rounded-full shadow-sm" alt="" />
+            <img src={user?.avatarUrl || user?.avatar} className="w-8 h-8 rounded-full shadow-sm object-cover" alt="" />
             <div className="relative flex-1">
               <input
                 type="text"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Viết bình luận..."
-                className="w-full bg-white border border-gray-200 rounded-full px-4 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10 shadow-sm"
+                className="w-full bg-white border border-gray-200 rounded-full px-4 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10 shadow-sm"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1.5 p-1 text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+                className="absolute right-2 top-2 p-1 text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
                 disabled={!commentText.trim()}
               >
-                <Send size={15} />
+                <Send size={16} />
               </button>
             </div>
           </form>
@@ -165,7 +230,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment }) => {
             <X size={32} />
           </button>
           <img
-            src={post.image}
+            src={selectedImageUrl}
             alt="zoom"
             className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-scale-up"
             onClick={(e) => e.stopPropagation()}

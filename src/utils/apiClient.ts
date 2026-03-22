@@ -143,28 +143,76 @@ export const userApi = {
  */
 export const postApi = {
   getPosts: async (params?: Record<string, unknown>) =>
-    apiGet(API_CONFIG.ENDPOINTS.STATUS.LIST, { params }),
+    apiGet(API_CONFIG.ENDPOINTS.POST.LIST, { params }),
 
-  getPost: async (postId: string) => apiGet(API_CONFIG.ENDPOINTS.STATUS.GET(postId)),
+  getPost: async (postId: string) => apiGet(API_CONFIG.ENDPOINTS.POST.GET(postId)),
 
-  createPost: async (data: unknown) => apiPost(API_CONFIG.ENDPOINTS.STATUS.CREATE, data),
+  getMyPosts: async (params?: Record<string, unknown>) =>
+    apiGet(API_CONFIG.ENDPOINTS.POST.GET_ME, { params }),
 
-  updatePost: async (postId: string, data: unknown) =>
-    apiPatch(API_CONFIG.ENDPOINTS.STATUS.UPDATE(postId), data),
+  getNewsFeed: async (params?: Record<string, unknown>) =>
+    apiGet(API_CONFIG.ENDPOINTS.POST.GET_FEED, { params }),
 
-  deletePost: async (postId: string) => apiDelete(API_CONFIG.ENDPOINTS.STATUS.DELETE(postId)),
+  getUserPosts: async (userId: string, params?: Record<string, unknown>) =>
+    apiGet(API_CONFIG.ENDPOINTS.POST.GET_USER_POSTS(userId), { params }),
 
-  likePost: async (postId: string) => apiPost(API_CONFIG.ENDPOINTS.STATUS.LIKE(postId)),
+  createPost: async (data: any) => {
+    const formData = new FormData();
+    if (data.content) formData.append("content", data.content);
+    if (data.privacy) formData.append("privacy", data.privacy);
+    if (data.feeling) formData.append("feeling", data.feeling);
+    if (data.images && data.images.length > 0) {
+      data.images.forEach((file: File) => {
+        formData.append("images", file);
+      });
+    }
 
-  unlikePost: async (postId: string) => apiPost(API_CONFIG.ENDPOINTS.STATUS.UNLIKE(postId)),
+    return apiPost(API_CONFIG.ENDPOINTS.POST.CREATE, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 
-  getLikes: async (postId: string) => apiGet(API_CONFIG.ENDPOINTS.STATUS.GET_LIKES(postId)),
+  updatePost: async (postId: string, data: any) => {
+    const formData = new FormData();
+    if (data.content) formData.append("content", data.content);
+    if (data.privacy) formData.append("privacy", data.privacy);
+    if (data.feeling) formData.append("feeling", data.feeling);
+
+    if (data.deletedImageIds && data.deletedImageIds.length > 0) {
+      data.deletedImageIds.forEach((id: number) => {
+        formData.append("deletedImageIds", id.toString());
+      });
+    }
+
+    if (data.newImages && data.newImages.length > 0) {
+      data.newImages.forEach((file: File) => {
+        formData.append("newImages", file);
+      });
+    }
+
+    return apiPut(API_CONFIG.ENDPOINTS.POST.UPDATE(postId), formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  deletePost: async (postId: string) => apiDelete(API_CONFIG.ENDPOINTS.POST.DELETE(postId)),
+
+  likePost: async (postId: string) => apiPost(API_CONFIG.ENDPOINTS.POST.LIKE(postId)),
+
+  unlikePost: async (postId: string) => apiPost(API_CONFIG.ENDPOINTS.POST.UNLIKE(postId)),
+
+  getLikes: async (postId: string) => apiGet(API_CONFIG.ENDPOINTS.POST.GET_LIKES(postId)),
 
   addComment: async (postId: string, data: unknown) =>
-    apiPost(API_CONFIG.ENDPOINTS.STATUS.COMMENT(postId), data),
+    apiPost(API_CONFIG.ENDPOINTS.POST.COMMENT(postId), data),
 
   sharePost: async (postId: string, data?: unknown) =>
-    apiPost(API_CONFIG.ENDPOINTS.STATUS.SHARE(postId), data),
+    apiPost(API_CONFIG.ENDPOINTS.POST.SHARE(postId), data),
+
+  search: async (query: string, params?: Record<string, unknown>) =>
+    apiGet(API_CONFIG.ENDPOINTS.POST.SEARCH, {
+      params: { q: query, ...(params || {}) },
+    }),
 };
 
 /**

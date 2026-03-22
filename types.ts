@@ -89,18 +89,48 @@ export interface Comment {
   likes: number;
 }
 
+export enum Privacy {
+  PUBLIC = "PUBLIC",
+  FRIEND_ONLY = "FRIEND_ONLY",
+  ONLY_ME = "ONLY_ME",
+}
+
+export interface PostImageDto {
+  id: number;
+  imageUrl: string;
+  orderIndex: number;
+}
+
 export interface Post {
   id: string;
   userId: string;
   author: User;
   content: string;
-  image?: string;
+  privacy: Privacy;
+  feeling?: string;
+  images: PostImageDto[];
   likes: number;
   isLiked: boolean;
   commentCount: number;
   comments: Comment[];
   createdAt: string;
+  updatedAt?: string;
   aiSummary?: string;
+}
+
+export interface PostCreateRequest {
+  content?: string;
+  privacy: Privacy;
+  feeling?: string;
+  images?: File[];
+}
+
+export interface PostUpdateRequest {
+  content?: string;
+  privacy: Privacy;
+  feeling?: string;
+  deletedImageIds?: number[];
+  newImages?: File[];
 }
 
 export interface Notification {

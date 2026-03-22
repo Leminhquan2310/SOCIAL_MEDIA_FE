@@ -20,6 +20,7 @@ import Notifications from "./src/pages/Notifications";
 import Settings from "./src/pages/Settings";
 import Privacy from "./src/pages/Privacy";
 import Terms from "./src/pages/Terms";
+import SearchResults from "./src/pages/SearchResults";
 
 /**
  * App Component
@@ -115,6 +116,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Terms />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/search"
+                element={
+                  <ProtectedRoute>
+                    <SearchResults />
                   </ProtectedRoute>
                 }
               />

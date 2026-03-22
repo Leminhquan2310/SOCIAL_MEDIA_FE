@@ -1,70 +1,246 @@
-import React, { useState } from "react";
-import { Image, MapPin, Smile, Send } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Image as ImageIcon, Smile, Send, X, MapPin, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { postApi } from "../utils/apiClient";
+import { Post, Privacy } from "../../types";
+import FeelingSelector from "./post/FeelingSelector";
+import PrivacySelector from "./post/PrivacySelector";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
 
 interface CreatePostProps {
-  onPostCreated: (content: string, imageUrl?: string) => void;
+  onPostCreated: (post: Post) => void;
 }
+
+const MenuBar = ({ editor }: { editor: any }) => {
+  if (!editor) return null;
+
+  return (
+    <div className="flex items-center gap-1 pb-2 mb-2 border-b border-gray-100 flex-wrap">
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        className={`p-1.5 rounded-lg transition-colors ${editor.isActive("bold") ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
+        title="In đậm"
+      >
+        <Bold size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        className={`p-1.5 rounded-lg transition-colors ${editor.isActive("italic") ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
+        title="In nghiêng"
+      >
+        <Italic size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        className={`p-1.5 rounded-lg transition-colors ${editor.isActive("underline") ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
+        title="Gạch chân"
+      >
+        <UnderlineIcon size={18} />
+      </button>
+      <div className="w-px h-4 bg-gray-200 mx-1" />
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        className={`p-1.5 rounded-lg transition-colors ${editor.isActive("bulletList") ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
+        title="Danh sách dấu chấm"
+      >
+        <List size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        className={`p-1.5 rounded-lg transition-colors ${editor.isActive("orderedList") ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
+        title="Danh sách số"
+      >
+        <ListOrdered size={18} />
+      </button>
+    </div>
+  );
+};
 
 const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const { user } = useAuth();
-  const [content, setContent] = useState("");
+  const [privacy, setPrivacy] = useState<Privacy>(Privacy.PUBLIC);
+  const [feeling, setFeeling] = useState<string | undefined>();
+  const [images, setImages] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Link.configure({
+        openOnClick: false,
+      }),
+      Placeholder.configure({
+        placeholder: `Bạn đang nghĩ gì, ${user?.fullName?.split(" ").pop() || ""}?`,
+      }),
+    ],
+    content: "",
+    editorProps: {
+      attributes: {
+        class: "focus:outline-none min-h-[100px] text-[15.5px] text-gray-800 leading-relaxed",
+      },
+    },
+  }, [user]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setImages((prev) => [...prev, ...newFiles]);
+
+      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      setPreviews((prev) => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(previews[index]);
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!editor) return;
+
+    const htmlContent = editor.getHTML();
+    const isTextEmpty = editor.getText().trim().length === 0;
+
+    if (isTextEmpty && images.length === 0) return;
 
     setIsPosting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    onPostCreated(content);
-    setContent("");
-    setIsPosting(false);
+    try {
+      const response = await postApi.createPost({
+        content: htmlContent,
+        privacy,
+        feeling,
+        images
+      });
+
+      onPostCreated(response as Post);
+
+      // Reset state
+      editor.commands.setContent("");
+      setPrivacy(Privacy.PUBLIC);
+      setFeeling(undefined);
+      setImages([]);
+      previews.forEach(p => URL.revokeObjectURL(p));
+      setPreviews([]);
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      alert("Đăng bài thất bại. Vui lòng thử lại!");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const update = () => {
+      setIsEmpty(editor.getText().trim().length === 0);
+    };
+
+    editor.on("update", update);
+
+    return () => {
+      editor.off("update", update);
+    };
+  }, [editor]);
+
+  useEffect(() => {
+    return () => {
+      editor?.destroy();
+    };
+  }, [editor]);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm p-3.5 mb-6 border border-gray-100 transition-all hover:border-gray-200">
+    <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 transition-all hover:border-gray-200">
       <div className="flex gap-3">
-        <img src={user?.avatarUrl} alt={user?.fullName} className="w-10 h-10 rounded-full ring-2 ring-gray-50 shadow-sm" />
-        <div className="flex-1 border-none">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={`Bạn đang nghĩ gì, ${user?.fullName?.split(" ")[user?.fullName.split(" ").length - 1]}?`}
-            className="w-full border-none focus:ring-0 focus:outline-none text-[15px] resize-none placeholder-gray-400 p-1.5 min-h-[80px]"
-          />
+        <img
+          src={user?.avatarUrl || user?.avatar}
+          alt={user?.fullName}
+          className="w-10 h-10 rounded-full ring-2 ring-gray-50 shadow-sm object-cover"
+        />
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[14px] text-gray-900">{user?.fullName}</span>
+              <PrivacySelector value={privacy} onChange={setPrivacy} />
+            </div>
+          </div>
+
+          <MenuBar editor={editor} />
+          <EditorContent editor={editor} className="cursor-text tiptap" />
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-        <div className="flex gap-0.5">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
-            <Image size={17} className="text-green-500" />
-            <span className="text-[13px] font-semibold">Ảnh/Video</span>
+      {previews.length > 0 && (
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {previews.map((url, idx) => (
+            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden shadow-sm border border-gray-100">
+              <img src={url} className="w-full h-full object-cover" alt="" />
+              <button
+                type="button"
+                onClick={() => removeImage(idx)}
+                className="absolute top-1.5 right-1.5 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors group"
+          >
+            <ImageIcon size={20} className="text-green-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[13.5px] font-bold">Ảnh/Video</span>
           </button>
-          <button className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
-            <Smile size={17} className="text-yellow-500" />
-            <span className="text-[13px] font-semibold">Cảm xúc</span>
-          </button>
-          <button className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
-            <MapPin size={17} className="text-red-500" />
-            <span className="text-[13px] font-semibold">Vị trí</span>
+
+          <FeelingSelector selected={feeling} onSelect={setFeeling} />
+
+          <button className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors group">
+            <MapPin size={20} className="text-rose-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[13.5px] font-bold">Địa điểm</span>
           </button>
         </div>
 
         <button
           onClick={handleSubmit}
-          disabled={!content.trim() || isPosting}
-          className={`flex items-center gap-2 px-5 py-2 rounded-full text-[13.5px] font-bold transition-all shadow-sm ${content.trim() && !isPosting
-            ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
-            : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            }`}
+          disabled={(isEmpty && images.length === 0) || isPosting}
+          className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
         >
           {isPosting ? "Đang đăng..." : "Đăng bài"}
-          {!isPosting && <Send size={15} />}
+          {!isPosting && <Send size={16} />}
         </button>
       </div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImageChange}
+        multiple
+        accept="image/*"
+        className="hidden"
+      />
     </div>
   );
 };
