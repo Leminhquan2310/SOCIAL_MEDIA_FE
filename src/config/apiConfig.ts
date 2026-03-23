@@ -33,18 +33,22 @@ export const API_CONFIG = {
       UNFOLLOW: (id: string) => `/users/${id}/unfollow`,
     },
 
-    // STATUS endpoints
-    STATUS: {
-      LIST: "/status",
-      GET: (id: string) => `/status/${id}`,
-      CREATE: "/status",
-      UPDATE: (id: string) => `/status/${id}`,
-      DELETE: (id: string) => `/status/${id}`,
-      LIKE: (id: string) => `/status/${id}/like`,
-      UNLIKE: (id: string) => `/status/${id}/unlike`,
-      GET_LIKES: (id: string) => `/status/${id}/likes`,
-      COMMENT: (id: string) => `/status/${id}/comments`,
-      SHARE: (id: string) => `/status/${id}/share`,
+    // POST endpoints (formerly STATUS)
+    POST: {
+      LIST: "/posts",
+      GET: (id: string) => `/posts/${id}`,
+      CREATE: "/posts",
+      UPDATE: (id: string) => `/posts/${id}`,
+      DELETE: (id: string) => `/posts/${id}`,
+      GET_ME: "/posts/me",
+      GET_FEED: "/posts/feed",
+      GET_USER_POSTS: (userId: string) => `/posts/user/${userId}`,
+      SEARCH: "/posts/search",
+      LIKE: (id: string) => `/posts/${id}/like`,
+      UNLIKE: (id: string) => `/posts/${id}/unlike`,
+      GET_LIKES: (id: string) => `/posts/${id}/likes`,
+      COMMENT: (id: string) => `/posts/${id}/comments`,
+      SHARE: (id: string) => `/posts/${id}/share`,
     },
 
     // Comment endpoints

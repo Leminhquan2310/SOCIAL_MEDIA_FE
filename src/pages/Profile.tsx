@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-hot-toast";
 import {
   Camera,
   Edit3,
@@ -19,10 +20,14 @@ import {
   Smile,
   User as UserIcon,
 } from "lucide-react";
-import { User } from "../../types";
-import { userApi } from "../utils/apiClient";
+import { User, Post } from "../../types";
+import { userApi, postApi } from "../utils/apiClient";
 import EditProfileModal from "../components/EditProfileModal";
 import AvatarCropperModal from "../components/AvatarCropperModal";
+import PostCard from "../components/PostCard";
+import CreatePost from "../components/CreatePost";
+import EditPostModal from "../components/post/EditPostModal";
+import DeletePostModal from "../components/post/DeletePostModal";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -37,6 +42,13 @@ const Profile: React.FC = () => {
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Post States
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isPostsLoading, setIsPostsLoading] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [isDeletingPost, setIsDeletingPost] = useState(false);
 
   const handleAvatarClick = () => {
     if (isOwnProfile) {
@@ -110,6 +122,79 @@ const Profile: React.FC = () => {
 
     fetchProfile();
   }, [userId, currentUser]);
+
+  useEffect(() => {
+    if (activeTab === "posts" && profileUser) {
+      fetchUserPosts();
+    }
+  }, [activeTab, profileUser?.id]);
+
+  const fetchUserPosts = async () => {
+    if (!profileUser) return;
+    setIsPostsLoading(true);
+    try {
+      const response = await postApi.getUserPosts(profileUser.id.toString());
+      setPosts(response as Post[]);
+    } catch (error) {
+      console.error("Failed to fetch user posts:", error);
+    } finally {
+      setIsPostsLoading(false);
+    }
+  };
+
+  const handlePostCreated = (post: Post) => {
+    setPosts([post, ...posts]);
+  };
+
+  const handleLike = async (postId: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+
+    const wasLiked = post.isLiked;
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId ? { ...p, isLiked: !wasLiked, likes: wasLiked ? p.likes - 1 : p.likes + 1 } : p
+      )
+    );
+
+    try {
+      if (wasLiked) await postApi.unlikePost(postId);
+      else await postApi.likePost(postId);
+    } catch (error) {
+      setPosts((prev) => prev.map((p) => (p.id === postId ? post : p)));
+    }
+  };
+
+  const handleAddComment = async (postId: string, content: string) => {
+    try {
+      await postApi.addComment(postId, { content });
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p))
+      );
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+    }
+  };
+
+  const handlePostUpdated = (updatedPost: Post) => {
+    setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingPostId) return;
+    setIsDeletingPost(true);
+    try {
+      await postApi.deletePost(deletingPostId);
+      setPosts((prev) => prev.filter((p) => p.id !== deletingPostId));
+      toast.success("Xóa bài viết thành công!");
+      setDeletingPostId(null);
+    } catch (error: any) {
+      console.error("Failed to delete post:", error);
+      toast.error(error.message || "Xóa bài viết thất bại!");
+    } finally {
+      setIsDeletingPost(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -208,7 +293,7 @@ const Profile: React.FC = () => {
                 alt={profileUser.fullName}
               />
               {isOwnProfile && (
-                <button 
+                <button
                   onClick={handleAvatarClick}
                   disabled={isUploading}
                   className="absolute bottom-2 right-2 bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition-all shadow-md border-2 border-white cursor-pointer disabled:bg-gray-400"
@@ -316,9 +401,34 @@ const Profile: React.FC = () => {
           )}
 
           {activeTab === "posts" && (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-              <Grid size={48} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 font-medium">Chưa có bài viết nào.</p>
+            <div className="space-y-6">
+              {isOwnProfile && <CreatePost onPostCreated={handlePostCreated} />}
+
+              {isPostsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2].map(i => (
+                    <div key={i} className="bg-white rounded-xl h-48 animate-pulse border border-gray-100" />
+                  ))}
+                </div>
+              ) : posts.length > 0 ? (
+                <div className="space-y-6">
+                  {posts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onLike={handleLike}
+                      onAddComment={handleAddComment}
+                      onEdit={setEditingPost}
+                      onDelete={setDeletingPostId}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                  <Grid size={48} className="mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500 font-medium">Chưa có bài viết nào.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -368,6 +478,23 @@ const Profile: React.FC = () => {
           onCropComplete={handleCropComplete}
         />
       )}
+
+      {/* Post Modals */}
+      {editingPost && (
+        <EditPostModal
+          isOpen={!!editingPost}
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onUpdated={handlePostUpdated}
+        />
+      )}
+
+      <DeletePostModal
+        isOpen={!!deletingPostId}
+        isDeleting={isDeletingPost}
+        onClose={() => setDeletingPostId(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 };

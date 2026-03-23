@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { User } from "../../types";
@@ -35,6 +36,7 @@ const MainLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const notifRef = useRef<HTMLDivElement>(null);
 
   console.log("user: ", user);
@@ -58,6 +60,12 @@ const MainLayout: React.FC = () => {
     logout();
     setShowLogoutModal(false);
     navigate("/login");
+  };
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   const notifications: NotificationItem[] = [
@@ -112,6 +120,9 @@ const MainLayout: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search people, posts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
                 className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
               />
             </div>
@@ -229,7 +240,7 @@ const MainLayout: React.FC = () => {
 
         {/* Suggested Friends Sidebar */}
         <aside className="lg:col-span-3 hidden lg:block space-y-6">
-          <div className="bg-white rounded-xl shadow-sm p-3.5 border border-gray-100 sticky top-24">
+          <div className="bg-white rounded-xl shadow-sm p-3.5 border border-gray-100 top-24">
             <div className="flex items-center justify-between mb-4 px-1">
               <h3 className="font-bold text-gray-800 text-sm">Gợi ý cho bạn</h3>
               <Link to="/friends" className="text-[11px] font-bold text-blue-600 hover:underline">
@@ -272,7 +283,7 @@ const MainLayout: React.FC = () => {
                     key={friend.id}
                     className="flex items-center gap-2.5 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <div className="relative">
+                    <div>
                       <img
                         src={friend.avatar}
                         className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-gray-50"
@@ -299,9 +310,9 @@ const MainLayout: React.FC = () => {
       </div>
 
       {/* Logout Modal */}
-      {showLogoutModal && (
+      {showLogoutModal && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in"
           onClick={() => setShowLogoutModal(false)}
         >
           <div
@@ -330,7 +341,8 @@ const MainLayout: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

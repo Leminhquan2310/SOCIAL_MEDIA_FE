@@ -211,32 +211,31 @@ api.interceptors.response.use(
  */
 export const handleApiError = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
-    const errorData = error.response?.data?.data as ErrorResponse;
+    // Some backend APIs return error in 'message' at top level
+    // Others wrap it in 'data'
+    const errorData = error.response?.data;
+    const message = errorData?.message || errorData?.data?.message;
 
-    // Custom error message from server
-    if (errorData?.message) {
-      return errorData.message;
+    if (message) {
+      return message;
     }
 
     // Default error messages by status code
     switch (error.response?.status) {
       case 400:
-        return "Invalid request. Please check your input.";
+        return "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.";
       case 401:
-        return "Unauthorized. Please log in again.";
+        return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
       case 403:
-        return "You do not have permission to perform this action.";
+        return "Bạn không có quyền thực hiện hành động này.";
       case 404:
-        return "The requested resource was not found.";
+        return "Không tìm thấy dữ liệu yêu cầu.";
       case 429:
-        return "Too many requests. Please try again later.";
+        return "Quá nhiều yêu cầu. Vui lòng thử lại sau.";
       case 500:
-        return "Server error. Please try again later.";
-      case 502:
-      case 503:
-        return "Service unavailable. Please try again later.";
+        return "Lỗi hệ thống. Vui lòng thử lại sau ít phút.";
       default:
-        return error.message || "An unexpected error occurred.";
+        return error.message || "Đã xảy ra lỗi không mong muốn.";
     }
   }
 
@@ -244,7 +243,7 @@ export const handleApiError = (error: unknown): string => {
     return error.message;
   }
 
-  return "An unexpected error occurred.";
+  return "Đã xảy ra lỗi không mong muốn.";
 };
 
 export default api;
