@@ -216,11 +216,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
           </button>
 
           <FeelingSelector selected={feeling} onSelect={setFeeling} />
-
-          <button className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors group">
-            <MapPin size={20} className="text-rose-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[13.5px] font-bold">Địa điểm</span>
-          </button>
         </div>
 
         <button

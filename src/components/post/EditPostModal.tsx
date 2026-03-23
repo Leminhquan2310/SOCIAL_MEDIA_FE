@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Image as ImageIcon, Globe, Users, Lock, Send, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered } from "lucide-react";
+import { createPortal } from "react-dom";
+import { X, Image as ImageIcon, Send, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, ChevronLeft, ChevronRight } from "lucide-react";
 import { Post, Privacy } from "../../../types";
 import { postApi } from "../../utils/apiClient";
 import FeelingSelector from "./FeelingSelector";
@@ -9,6 +10,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { toast } from "react-hot-toast";
 
 interface EditPostModalProps {
   post: Post;
@@ -62,18 +64,22 @@ const MenuBar = ({ editor }: { editor: any }) => {
   );
 };
 
+interface ImageData {
+  id?: number;
+  url: string;
+  file?: File;
+  isNew: boolean;
+  newIdx?: number;
+}
+
 const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, onUpdated }) => {
   const [privacy, setPrivacy] = useState<Privacy>(post.privacy);
   const [feeling, setFeeling] = useState<string | undefined>(post.feeling);
-  
-  // Existing images management
-  const [existingImages, setExistingImages] = useState(post.images || []);
+
+  // Unified image management for reordering
+  const [images, setImages] = useState<ImageData[]>([]);
   const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
-  
-  // New images
-  const [newImages, setNewImages] = useState<File[]>([]);
-  const [newPreviews, setNewPreviews] = useState<string[]>([]);
-  
+
   const [isUpdating, setIsUpdating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,11 +107,16 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, on
       editor.commands.setContent(post.content);
       setPrivacy(post.privacy);
       setFeeling(post.feeling);
-      setExistingImages(post.images || []);
+
+      // Initialize unified images
+      const initialImages: ImageData[] = (post.images || []).map(img => ({
+        id: img.id,
+        url: img.imageUrl,
+        isNew: false
+      }));
+      setImages(initialImages);
+
       setDeletedImageIds([]);
-      setNewImages([]);
-      newPreviews.forEach(p => URL.revokeObjectURL(p));
-      setNewPreviews([]);
     }
   }, [isOpen, post, editor]);
 
@@ -114,22 +125,33 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, on
   const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setNewImages((prev) => [...prev, ...filesArray]);
-
-      const previewsArray = filesArray.map((file) => URL.createObjectURL(file));
-      setNewPreviews((prev) => [...prev, ...previewsArray]);
+      const newItems: ImageData[] = filesArray.map((file) => ({
+        url: URL.createObjectURL(file),
+        file: file,
+        isNew: true
+      }));
+      setImages([...images, ...newItems]);
     }
   };
 
-  const removeExistingImage = (id: number) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== id));
-    setDeletedImageIds((prev) => [...prev, id]);
+  const removeImage = (index: number) => {
+    const img = images[index];
+    if (!img.isNew && img.id) {
+      setDeletedImageIds([...deletedImageIds, img.id]);
+    } else if (img.isNew) {
+      URL.revokeObjectURL(img.url);
+    }
+    setImages(images.filter((_, i) => i !== index));
   };
 
-  const removeNewImage = (index: number) => {
-    URL.revokeObjectURL(newPreviews[index]);
-    setNewImages((prev) => prev.filter((_, i) => i !== index));
-    setNewPreviews((prev) => prev.filter((_, i) => i !== index));
+  const moveImage = (index: number, direction: 'left' | 'right') => {
+    if (direction === 'left' && index === 0) return;
+    if (direction === 'right' && index === images.length - 1) return;
+
+    const newImages = [...images];
+    const targetIdx = direction === 'left' ? index - 1 : index + 1;
+    [newImages[index], newImages[targetIdx]] = [newImages[targetIdx], newImages[index]];
+    setImages(newImages);
   };
 
   const handleUpdate = async () => {
@@ -138,31 +160,50 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, on
     const htmlContent = editor.getHTML();
     const isTextEmpty = editor.getText().trim().length === 0;
 
-    if (isTextEmpty && existingImages.length === 0 && newImages.length === 0) return;
+    if (isTextEmpty && images.length === 0) return;
 
     setIsUpdating(true);
     try {
+      // Construction imageOrder
+      // newImages will be a list of Files
+      // imageOrder will be a list of strings: "id" or "new-0", "new-1"...
+      const newImagesFiles: File[] = [];
+      const imageOrder: string[] = [];
+
+      let newCount = 0;
+      images.forEach(img => {
+        if (img.isNew && img.file) {
+          imageOrder.push(`new-${newCount++}`);
+          newImagesFiles.push(img.file);
+        } else if (img.id) {
+          imageOrder.push(img.id.toString());
+        }
+      });
+
       const response = await postApi.updatePost(post.id, {
         content: htmlContent,
         privacy,
         feeling,
         deletedImageIds,
-        newImages
+        newImages: newImagesFiles,
+        imageOrder: imageOrder
       });
+
+      toast.success("Cập nhật bài viết thành công!");
       onUpdated(response as Post);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update post:", error);
-      alert("Cập nhật bài viết thất bại!");
+      toast.error(error.message || "Cập nhật bài viết thất bại!");
     } finally {
       setIsUpdating(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      
+
       <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh] overflow-hidden animate-scale-up border border-gray-100">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <div className="w-10" />
@@ -175,10 +216,10 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, on
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           {/* User Info */}
           <div className="flex gap-3 mb-4">
-            <img 
-              src={post.author.avatarUrl || post.author.avatar} 
+            <img
+              src={post.author.avatarUrl || post.author.avatar}
               className="w-11 h-11 rounded-full object-cover ring-2 ring-gray-50 shadow-sm"
-              alt="" 
+              alt=""
             />
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -202,32 +243,44 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, on
 
           {/* Images Grid */}
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {/* Existing Images */}
-            {existingImages.map((img) => (
-              <div key={img.id} className="relative group aspect-square rounded-xl overflow-hidden shadow-sm border border-gray-100">
-                <img src={img.imageUrl} className="w-full h-full object-cover" alt="" />
-                <button
-                  type="button"
-                  onClick={() => removeExistingImage(img.id)}
-                  className="absolute top-1.5 right-1.5 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-            
-            {/* New Image Previews */}
-            {newPreviews.map((url, idx) => (
-              <div key={`new-${idx}`} className="relative group aspect-square rounded-xl overflow-hidden shadow-sm border border-blue-100">
-                <img src={url} className="w-full h-full object-cover" alt="" />
-                <div className="absolute top-1.5 left-1.5 bg-blue-600 text-[10px] text-white font-bold px-1.5 py-0.5 rounded uppercase">Mới</div>
-                <button
-                  type="button"
-                  onClick={() => removeNewImage(idx)}
-                  className="absolute top-1.5 right-1.5 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
-                >
-                  <X size={14} />
-                </button>
+            {images.map((img, idx) => (
+              <div key={img.id || `new-${idx}`} className="relative group aspect-square rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                <img src={img.url} className="w-full h-full object-cover" alt="" />
+
+                {/* Image Actions Overlay */}
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
+                  <div className="flex justify-between items-start">
+                    {img.isNew ? (
+                      <div className="bg-blue-600 text-[9px] text-white font-bold px-1.5 py-0.5 rounded uppercase shadow-sm">Mới</div>
+                    ) : <div />}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="bg-black/60 text-white p-1.5 rounded-full hover:bg-rose-600 transition-colors backdrop-blur-sm"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+
+                  <div className="flex justify-center gap-2 mb-1">
+                    <button
+                      type="button"
+                      onClick={() => moveImage(idx, 'left')}
+                      disabled={idx === 0}
+                      className="bg-black/60 text-white p-1.5 rounded-lg hover:bg-blue-600 transition-colors backdrop-blur-sm disabled:opacity-30"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveImage(idx, 'right')}
+                      disabled={idx === images.length - 1}
+                      className="bg-black/60 text-white p-1.5 rounded-lg hover:bg-blue-600 transition-colors backdrop-blur-sm disabled:opacity-30"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
 
@@ -241,7 +294,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, on
               <span className="text-[12px] font-bold">Thêm ảnh</span>
             </button>
           </div>
-          
+
           <input
             type="file"
             ref={fileInputRef}
@@ -254,10 +307,10 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose, on
 
         <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
           <FeelingSelector selected={feeling} onSelect={setFeeling} />
-          
+
           <button
             onClick={handleUpdate}
-            disabled={(!editor?.getText().trim() && existingImages.length === 0 && newImages.length === 0) || isUpdating}
+            disabled={(!editor?.getText().trim() && images.length === 0) || isUpdating}
             className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
           >
             {isUpdating ? "Đang lưu..." : "Lưu thay đổi"}

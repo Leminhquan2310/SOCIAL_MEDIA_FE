@@ -48,13 +48,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
     }
   };
 
-  const isAuthor = user?.id?.toString() === post.userId?.toString();
+  const isAuthor = user?.id?.toString() === post.author?.id?.toString();
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md hover:border-gray-200">
       {/* Header */}
       <div className="p-3.5 flex items-center justify-between relative">
-        <a href={`#/profile/${post.userId}`} className="flex items-center gap-2.5 group">
+        <a href={`#/profile/${post.author?.id}`} className="flex items-center gap-2.5 group">
           <img
             src={post.author.avatarUrl || post.author.avatar}
             alt={post.author.fullName || post.author.name}

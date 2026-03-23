@@ -105,8 +105,6 @@ export const authApi = {
 
   refreshToken: async () =>
     apiPost(API_CONFIG.ENDPOINTS.AUTH.REFRESH, {}),
-
-  verifyEmail: async (token: string) => apiPost(API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL, { token }),
 };
 
 /**
@@ -187,6 +185,12 @@ export const postApi = {
     if (data.newImages && data.newImages.length > 0) {
       data.newImages.forEach((file: File) => {
         formData.append("newImages", file);
+      });
+    }
+
+    if (data.imageOrder && data.imageOrder.length > 0) {
+      data.imageOrder.forEach((ref: string) => {
+        formData.append("imageOrder", ref);
       });
     }
 

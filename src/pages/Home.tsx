@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import CreatePost from "../components/CreatePost";
 import PostCard from "../components/PostCard";
 import { Post } from "../../types";
@@ -9,7 +10,7 @@ import DeletePostModal from "../components/post/DeletePostModal";
 const Home: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Management state
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
@@ -41,7 +42,7 @@ const Home: React.FC = () => {
 
     // Optimistic update
     const wasLiked = post.isLiked;
-    setPosts(prev => prev.map(p => 
+    setPosts(prev => prev.map(p =>
       p.id === postId ? {
         ...p,
         isLiked: !wasLiked,
@@ -57,7 +58,7 @@ const Home: React.FC = () => {
       }
     } catch (error) {
       // Revert if failed
-      setPosts(prev => prev.map(p => 
+      setPosts(prev => prev.map(p =>
         p.id === postId ? post : p
       ));
     }
@@ -88,15 +89,16 @@ const Home: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (!deletingPostId) return;
-    
+
     setIsDeleting(true);
     try {
       await postApi.deletePost(deletingPostId);
       setPosts(prev => prev.filter(p => p.id !== deletingPostId));
+      toast.success("Xóa bài viết thành công!");
       setDeletingPostId(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete post:", error);
-      alert("Xóa bài viết thất bại!");
+      toast.error(error.message || "Xóa bài viết thất bại!");
     } finally {
       setIsDeleting(false);
     }
@@ -125,10 +127,10 @@ const Home: React.FC = () => {
 
       <div className="space-y-6">
         {posts.map((post) => (
-          <PostCard 
-            key={post.id} 
-            post={post} 
-            onLike={handleLike} 
+          <PostCard
+            key={post.id}
+            post={post}
+            onLike={handleLike}
             onAddComment={handleAddComment}
             onEdit={setEditingPost}
             onDelete={setDeletingPostId}
@@ -137,7 +139,7 @@ const Home: React.FC = () => {
       </div>
 
       <div className="text-center py-10">
-        <button 
+        <button
           onClick={fetchPosts}
           className="px-8 py-2.5 bg-white text-blue-600 font-bold text-sm rounded-full shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all border border-blue-50 active:scale-95"
         >

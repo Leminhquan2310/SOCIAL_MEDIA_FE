@@ -28,21 +28,21 @@ const PostCarousel: React.FC<PostCarouselProps> = ({ images, onImageClick }) => 
   };
 
   return (
-    <div className="relative group overflow-hidden bg-gray-100 aspect-video sm:aspect-auto sm:max-h-[600px]">
-      <div 
-        className="flex transition-transform duration-500 ease-out h-full"
+    <div className="relative group overflow-hidden bg-gray-50 flex items-center justify-center min-h-[300px] max-h-[600px] w-full">
+      <div
+        className="flex transition-transform duration-500 ease-out h-full w-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((img) => (
-          <div 
-            key={img.id} 
-            className="w-full flex-shrink-0 cursor-pointer relative"
+          <div
+            key={img.id}
+            className="w-full h-full flex-shrink-0 cursor-pointer relative flex items-center justify-center bg-gray-50"
             onClick={() => onImageClick?.(img.imageUrl)}
           >
             <img
               src={img.imageUrl}
               alt=""
-              className="w-full h-full object-contain bg-black/5"
+              className="max-w-full max-h-[600px] object-contain shadow-sm"
             />
           </div>
         ))}
@@ -73,9 +73,8 @@ const PostCarousel: React.FC<PostCarouselProps> = ({ images, onImageClick }) => 
             <button
               key={idx}
               onClick={(e) => goToSlide(e, idx)}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${
-                idx === currentIndex ? "bg-white w-4" : "bg-white/50"
-              }`}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentIndex ? "bg-white w-4" : "bg-white/50"
+                }`}
             />
           ))}
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-hot-toast";
 import {
   Camera,
   Edit3,
@@ -185,10 +186,11 @@ const Profile: React.FC = () => {
     try {
       await postApi.deletePost(deletingPostId);
       setPosts((prev) => prev.filter((p) => p.id !== deletingPostId));
+      toast.success("Xóa bài viết thành công!");
       setDeletingPostId(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete post:", error);
-      alert("Xóa bài viết thất bại!");
+      toast.error(error.message || "Xóa bài viết thất bại!");
     } finally {
       setIsDeletingPost(false);
     }
@@ -291,7 +293,7 @@ const Profile: React.FC = () => {
                 alt={profileUser.fullName}
               />
               {isOwnProfile && (
-                <button 
+                <button
                   onClick={handleAvatarClick}
                   disabled={isUploading}
                   className="absolute bottom-2 right-2 bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition-all shadow-md border-2 border-white cursor-pointer disabled:bg-gray-400"
@@ -401,7 +403,7 @@ const Profile: React.FC = () => {
           {activeTab === "posts" && (
             <div className="space-y-6">
               {isOwnProfile && <CreatePost onPostCreated={handlePostCreated} />}
-              
+
               {isPostsLoading ? (
                 <div className="space-y-4">
                   {[1, 2].map(i => (
