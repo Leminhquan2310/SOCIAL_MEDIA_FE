@@ -1,8 +1,8 @@
-import { User, Post, Notification } from "./types";
+import { User, Post, Notification, Privacy } from "./types";
 
 export const MOCK_USER: User = {
   id: 1,
-  name: "John Doe",
+  fullName: "John Doe",
   username: "johndoe",
   email: "johndoe@gmail.com",
   avatar: "https://picsum.photos/seed/johndoe/200",
@@ -23,7 +23,8 @@ export const MOCK_POSTS: Post[] = [
       avatar: "https://picsum.photos/seed/jane/200",
     },
     content: "Loving the vibes at the beach today! 🌊✨ #summer #beachlife",
-    image: "https://picsum.photos/seed/beach/800/600",
+    privacy: Privacy.PUBLIC,
+    images: [{ id: 1, imageUrl: "https://picsum.photos/seed/beach/800/600", orderIndex: 0 }],
     likes: 124,
     isLiked: false,
     commentCount: 8,
@@ -45,13 +46,15 @@ export const MOCK_POSTS: Post[] = [
     userId: "u3",
     author: {
       id: 3,
-      name: "Tech Insider",
+      fullName: "Tech Insider",
       username: "techinsider",
       email: "janesmith@gmail.com",
       avatar: "https://picsum.photos/seed/tech/200",
     },
     content:
       "Just launched our new React framework. It leverages the latest Gemini 3 APIs for intelligent state management.",
+    privacy: Privacy.PUBLIC,
+    images: [],
     likes: 450,
     isLiked: true,
     commentCount: 24,
@@ -63,21 +66,21 @@ export const MOCK_POSTS: Post[] = [
 export const SUGGESTED_FRIENDS: User[] = [
   {
     id: 1,
-    name: "Alice Walker",
+    fullName: "Alice Walker",
     username: "alice_w",
     email: "janesmith@gmail.com",
     avatar: "https://picsum.photos/seed/alice/200",
   },
   {
     id: 2,
-    name: "Bob Johnson",
+    fullName: "Bob Johnson",
     username: "bjohnson",
     email: "janesmith@gmail.com",
     avatar: "https://picsum.photos/seed/bob/200",
   },
   {
     id: 3,
-    name: "Charlie Davis",
+    fullName: "Charlie Davis",
     username: "charlied",
     email: "janesmith@gmail.com",
     avatar: "https://picsum.photos/seed/charlie/200",
@@ -87,7 +90,7 @@ export const SUGGESTED_FRIENDS: User[] = [
 export const ONLINE_FRIENDS: User[] = [
   {
     id: 1,
-    name: "Sarah Wilson",
+    fullName: "Sarah Wilson",
     username: "sarahw",
     email: "janesmith@gmail.com",
     avatar: "https://picsum.photos/seed/sarah/200",
@@ -95,7 +98,7 @@ export const ONLINE_FRIENDS: User[] = [
   },
   {
     id: 2,
-    name: "Mike Ross",
+    fullName: "Mike Ross",
     username: "mross",
     email: "janesmith@gmail.com",
     avatar: "https://picsum.photos/seed/mike/200",

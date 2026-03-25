@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { Search, Grid, Users, Loader2 } from "lucide-react";
 import { postApi, userApi } from "../utils/apiClient";
 import { Post, User } from "../../types";
@@ -10,7 +10,7 @@ import DeletePostModal from "../components/post/DeletePostModal";
 const SearchResults: React.FC = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
-  
+
   const [activeTab, setActiveTab] = useState<"posts" | "users">("posts");
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -73,8 +73,8 @@ const SearchResults: React.FC = () => {
             <Search size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 leading-tight">Kết quả tìm kiếm</h1>
-            <p className="text-gray-500 font-medium">Tìm thấy kết quả cho "{query}"</p>
+            <h1 className="text-2xl font-black text-gray-900 leading-tight">Search results</h1>
+            <p className="text-gray-500 font-medium">Found results for "{query}"</p>
           </div>
         </div>
 
@@ -82,21 +82,19 @@ const SearchResults: React.FC = () => {
         <div className="flex border-b border-gray-100 -mx-6 px-6">
           <button
             onClick={() => setActiveTab("posts")}
-            className={`flex items-center gap-2 px-6 py-4 transition-all font-bold text-[12px] uppercase tracking-widest border-b-2 ${
-              activeTab === "posts" ? "text-blue-600 border-blue-600" : "text-gray-400 border-transparent hover:text-gray-600"
-            }`}
+            className={`flex items-center gap-2 px-6 py-4 transition-all font-bold text-[12px] uppercase tracking-widest border-b-2 ${activeTab === "posts" ? "text-blue-600 border-blue-600" : "text-gray-400 border-transparent hover:text-gray-600"
+              }`}
           >
             <Grid size={16} />
-            Bài viết
+            Posts
           </button>
           <button
             onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 px-6 py-4 transition-all font-bold text-[12px] uppercase tracking-widest border-b-2 ${
-              activeTab === "users" ? "text-blue-600 border-blue-600" : "text-gray-400 border-transparent hover:text-gray-600"
-            }`}
+            className={`flex items-center gap-2 px-6 py-4 transition-all font-bold text-[12px] uppercase tracking-widest border-b-2 ${activeTab === "users" ? "text-blue-600 border-blue-600" : "text-gray-400 border-transparent hover:text-gray-600"
+              }`}
           >
             <Users size={16} />
-            Mọi người
+            People
           </button>
         </div>
       </div>
@@ -112,13 +110,13 @@ const SearchResults: React.FC = () => {
           <div className="space-y-6">
             {posts.length > 0 ? (
               posts.map((post) => (
-                <PostCard 
-                  key={post.id} 
-                  post={post} 
-                  onLike={() => {}} 
-                  onAddComment={() => {}}
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onLike={() => { }}
+                  onAddComment={() => { }}
                   onEdit={setEditingPost}
-                  onDelete={setDeletingPostId} 
+                  onDelete={setDeletingPostId}
                 />
               ))
             ) : (
@@ -138,9 +136,12 @@ const SearchResults: React.FC = () => {
                     <h4 className="font-bold text-gray-900">{user.fullName}</h4>
                     <p className="text-xs text-gray-400">@{user.username}</p>
                   </div>
-                  <button className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors">
-                    Xem hồ sơ
-                  </button>
+                  <Link
+                    to={`/u/${user.username}`}
+                    className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                  >
+                    View profile
+                  </Link>
                 </div>
               ))
             ) : (

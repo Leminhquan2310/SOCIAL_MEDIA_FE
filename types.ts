@@ -77,6 +77,7 @@ export interface User {
   isOnline?: boolean;
   followers?: number;
   following?: number;
+  mutualFriends?: number;
 }
 
 export interface Comment {
@@ -133,13 +134,35 @@ export interface PostUpdateRequest {
   newImages?: File[];
 }
 
+export enum NotificationType {
+  LIKE_POST = "LIKE_POST",
+  LIKE_COMMENT = "LIKE_COMMENT",
+  COMMENT_POST = "COMMENT_POST",
+  REPLY_COMMENT = "REPLY_COMMENT",
+  FRIEND_REQUEST = "FRIEND_REQUEST",
+  FRIEND_ACCEPT = "FRIEND_ACCEPT",
+}
+
 export interface Notification {
-  id: string;
-  type: "like" | "comment" | "friend_request";
-  fromUser: User;
-  read: boolean;
+  id: string | number;
+  actor: User;
+  type: NotificationType;
+  referenceId?: string | number;
+  isRead: boolean;
   createdAt: string;
-  postId?: string;
+}
+
+export type FriendshipStatus =
+  | "NONE"
+  | "PENDING_SENT"
+  | "PENDING_RECEIVED"
+  | "ACCEPTED"
+  | "LOADING";
+
+export interface FriendStatusDTO {
+  status: FriendshipStatus | string;
+  friendshipId?: number;
+  requesterId?: number;
 }
 
 export interface AuthState {

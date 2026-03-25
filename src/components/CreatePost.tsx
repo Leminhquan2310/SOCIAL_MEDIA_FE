@@ -212,7 +212,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
             className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors group"
           >
             <ImageIcon size={20} className="text-green-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[13.5px] font-bold">Ảnh/Video</span>
+            <span className="text-[13.5px] font-bold">Ảnh</span>
           </button>
 
           <FeelingSelector selected={feeling} onSelect={setFeeling} />

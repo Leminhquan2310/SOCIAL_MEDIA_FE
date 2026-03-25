@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Globe, Users, Lock } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Post } from "../../types";
 import { Privacy } from "../../types";
 import { formatDistanceToNow } from "date-fns";
@@ -54,7 +55,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md hover:border-gray-200">
       {/* Header */}
       <div className="p-3.5 flex items-center justify-between relative">
-        <a href={`#/profile/${post.author?.id}`} className="flex items-center gap-2.5 group">
+        <Link to={`/u/${post.author?.username}`} className="flex items-center gap-2.5 group">
           <img
             src={post.author.avatarUrl || post.author.avatar}
             alt={post.author.fullName || post.author.name}
@@ -79,29 +80,29 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
               {getPrivacyIcon(post.privacy)}
             </div>
           </div>
-        </a>
+        </Link>
 
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowOptions(!showOptions)}
             className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition-colors"
           >
             <MoreHorizontal size={20} />
           </button>
-          
+
           {showOptions && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowOptions(false)} />
               <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-1.5 z-20 animate-fade-in">
                 {isAuthor ? (
                   <>
-                    <button 
+                    <button
                       onClick={() => { onEdit?.(post); setShowOptions(false); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     >
                       Sửa bài viết
                     </button>
-                    <button 
+                    <button
                       onClick={() => { onDelete?.(post.id); setShowOptions(false); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                     >
@@ -121,7 +122,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
 
       {/* Content */}
       <div className="px-4 pb-3">
-        <div 
+        <div
           className="text-gray-800 text-[15px] leading-relaxed post-content"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
         />
@@ -137,9 +138,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
         <div className="flex items-center gap-1">
           <button
             onClick={() => onLike(post.id)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all active:scale-95 ${
-              post.isLiked ? "text-rose-500 bg-rose-50" : "text-gray-500 hover:bg-gray-50"
-            }`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all active:scale-95 ${post.isLiked ? "text-rose-500 bg-rose-50" : "text-gray-500 hover:bg-gray-50"
+              }`}
           >
             <Heart size={20} fill={post.isLiked ? "currentColor" : "none"} />
             <span className="font-bold text-[13.5px]">{post.likes}</span>
@@ -147,9 +147,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
 
           <button
             onClick={() => setShowComments(!showComments)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-              showComments ? "text-blue-600 bg-blue-50" : "text-gray-500 hover:bg-gray-50"
-            }`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${showComments ? "text-blue-600 bg-blue-50" : "text-gray-500 hover:bg-gray-50"
+              }`}
           >
             <MessageCircle size={20} />
             <span className="font-bold text-[13.5px]">{post.commentCount}</span>
@@ -168,21 +167,21 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
           <div className="space-y-3 mb-4 mt-2">
             {post.comments.map((comment) => (
               <div key={comment.id} className="flex gap-2.5 animate-fade-in">
-                <a href={`#/profile/${comment.userId}`} className="shrink-0 mt-1">
+                <Link to={`/profile/${comment.userId}`} className="shrink-0 mt-1">
                   <img
                     src={comment.userAvatar}
                     className="w-8 h-8 rounded-full border border-gray-100 shadow-sm object-cover"
                     alt=""
                   />
-                </a>
+                </Link>
                 <div className="flex-1 bg-white p-2.5 rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-center mb-0.5">
-                    <a
-                      href={`#/profile/${comment.userId}`}
+                    <Link
+                      to={`/profile/${comment.userId}`}
                       className="font-bold text-[12.5px] text-gray-900 hover:underline"
                     >
                       {comment.userName}
-                    </a>
+                    </Link>
                     <span className="text-[10px] text-gray-400">
                       {formatDistanceToNow(new Date(comment.createdAt))}
                     </span>

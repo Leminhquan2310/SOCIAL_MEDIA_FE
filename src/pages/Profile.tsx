@@ -28,12 +28,15 @@ import PostCard from "../components/PostCard";
 import CreatePost from "../components/CreatePost";
 import EditPostModal from "../components/post/EditPostModal";
 import DeletePostModal from "../components/post/DeletePostModal";
+import FriendshipButton from "../components/friend/FriendshipButton";
+import MutualFriendsModal from "../components/friend/MutualFriendsModal";
 
 const Profile: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId, username } = useParams<{ userId?: string; username?: string }>();
   const { user: currentUser, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<"posts" | "about" | "friends" | "photos">("about");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isMutualModalOpen, setIsMutualModalOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -105,10 +108,19 @@ const Profile: React.FC = () => {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        if (!userId || String(userId) === String(currentUser?.id)) {
+        if (!userId && !username) {
+          setProfileUser(currentUser);
+        } else if (userId && String(userId) === String(currentUser?.id)) {
+          setProfileUser(currentUser);
+        } else if (username && username === currentUser?.username) {
           setProfileUser(currentUser);
         } else {
-          const response: any = await userApi.getUser(userId);
+          let response: any;
+          if (username) {
+            response = await userApi.getUserByUsername(username);
+          } else {
+            response = await userApi.getUser(userId!);
+          }
           const userData = response?.data || response;
           setProfileUser(userData);
         }
@@ -121,7 +133,7 @@ const Profile: React.FC = () => {
     };
 
     fetchProfile();
-  }, [userId, currentUser]);
+  }, [userId, username, currentUser]);
 
   useEffect(() => {
     if (activeTab === "posts" && profileUser) {
@@ -321,14 +333,18 @@ const Profile: React.FC = () => {
                 </button>
               ) : (
                 <>
-                  <button className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 cursor-pointer active:scale-95">
-                    <UserPlus size={16} />
-                    Theo dõi
-                  </button>
-                  <button className="flex items-center gap-2 px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all cursor-pointer active:scale-95">
-                    <MessageCircle size={16} />
-                    Nhắn tin
-                  </button>
+                  {profileUser && (
+                    <FriendshipButton
+                      targetUserId={profileUser.id}
+                      targetUserName={profileUser.fullName || profileUser.username}
+                    />
+                  )}
+                  {currentUser && (
+                    <button className="flex items-center gap-2 px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all cursor-pointer active:scale-95">
+                      <MessageCircle size={16} />
+                      Nhắn tin
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -350,6 +366,17 @@ const Profile: React.FC = () => {
                 Người theo dõi
               </span>
             </div>
+            {profileUser.mutualFriends !== undefined && profileUser.mutualFriends > 0 && (
+              <button
+                onClick={() => setIsMutualModalOpen(true)}
+                className="flex items-center gap-2 hover:bg-blue-50 p-1 px-2 rounded-lg transition-colors cursor-pointer"
+              >
+                <span className="font-black text-blue-600 text-lg">{profileUser.mutualFriends}</span>
+                <span className="text-blue-500 font-bold text-[11px] uppercase tracking-wider">
+                  Manual friends
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -476,6 +503,16 @@ const Profile: React.FC = () => {
             setTempImage(null);
           }}
           onCropComplete={handleCropComplete}
+        />
+      )}
+
+      {/* Mutual Friends Modal */}
+      {profileUser && (
+        <MutualFriendsModal
+          isOpen={isMutualModalOpen}
+          onClose={() => setIsMutualModalOpen(false)}
+          targetUserId={profileUser.id}
+          targetUserName={profileUser.fullName || profileUser.username}
         />
       )}
 

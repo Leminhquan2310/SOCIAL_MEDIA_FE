@@ -33,7 +33,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <LoadingProvider>
         <AuthProvider>
-          <Toaster 
+          <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,
@@ -66,7 +66,7 @@ const App: React.FC = () => {
               <Route
                 path="/login"
                 element={
-                  <ProtectedRoute requireAuth={false}>
+                  <ProtectedRoute requireAuth={false} guestOnly={true}>
                     <LoginPage />
                   </ProtectedRoute>
                 }
@@ -74,7 +74,7 @@ const App: React.FC = () => {
               <Route
                 path="/register"
                 element={
-                  <ProtectedRoute requireAuth={false}>
+                  <ProtectedRoute requireAuth={false} guestOnly={true}>
                     <RegisterPage />
                   </ProtectedRoute>
                 }
@@ -95,6 +95,14 @@ const App: React.FC = () => {
                 path="/profile/:userId"
                 element={
                   <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/u/:username"
+                element={
+                  <ProtectedRoute requireAuth={false}>
                     <Profile />
                   </ProtectedRoute>
                 }

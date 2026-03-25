@@ -160,7 +160,7 @@ api.interceptors.response.use(
         setAccessToken(null);
         
         // Redirect về login nếu refresh thất bại hoàn toàn
-        window.location.href = "/login";
+        // window.location.href = "/login"; // Tạm thời tắt để hỗ trợ Guest mode, để Router xử lý
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

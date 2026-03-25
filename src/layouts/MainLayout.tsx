@@ -4,6 +4,8 @@ import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { User } from "../../types";
 import Sidebar from "../components/Sidebar";
+import NotificationDropdown from "../components/NotificationDropdown";
+import { useNotification } from "../hooks/useNotification";
 import {
   Bell,
   Search,
@@ -18,79 +20,7 @@ import {
 } from "lucide-react";
 import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from "../../constants";
 
-interface NotificationItem {
-  id: number;
-  type: "like" | "comment" | "friend";
-  user: User;
-  text: string;
-  time: string;
-}
-
-/**
- * Main Layout Component
- * Wraps authenticated pages with header, sidebar, and suggested friends
- */
-const MainLayout: React.FC = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const notifRef = useRef<HTMLDivElement>(null);
-
-  console.log("user: ", user);
-
-
-  // Close notification dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-        setIsNotifOpen(false);
-      }
-    };
-
-    if (isNotifOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isNotifOpen]);
-
-  const handleLogout = () => {
-    logout();
-    setShowLogoutModal(false);
-    navigate("/login");
-  };
-
-  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
-  const notifications: NotificationItem[] = [
-    {
-      id: 1,
-      type: "like",
-      user: SUGGESTED_FRIENDS[0],
-      text: "liked your photo",
-      time: "2m ago",
-    },
-    {
-      id: 2,
-      type: "comment",
-      user: SUGGESTED_FRIENDS[1],
-      text: "commented on your post",
-      time: "1h ago",
-    },
-    {
-      id: 3,
-      type: "friend",
-      user: ONLINE_FRIENDS[0],
-      text: "sent you a friend request",
-      time: "5h ago",
-    },
-  ];
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
 
   return (
     <div className="min-h-screen bg-white">
@@ -129,184 +59,173 @@ const MainLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="relative" ref={notifRef}>
-              <button
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className={`relative p-2 rounded-full transition-all ${isNotifOpen ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"
-                  }`}
-              >
-                <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
-
-              {/* Notification Dropdown */}
-              {isNotifOpen && (
-                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-slide-up">
-                  <div className="p-4 border-b border-gray-50 flex justify-between items-center">
-                    <h3 className="font-bold text-gray-900">Notifications</h3>
-                    <button className="text-xs text-blue-600 font-semibold hover:underline">
-                      Mark all read
-                    </button>
-                  </div>
-                  <div className="max-h-[400px] overflow-y-auto">
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        className="p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0"
-                      >
-                        <div className="relative">
-                          <img src={n.user.avatar} className="w-10 h-10 rounded-full" alt="" />
-                          <div className="absolute -bottom-1 -right-1 p-1 bg-white rounded-full">
-                            {n.type === "like" && (
-                              <Heart size={10} className="text-rose-500 fill-rose-500" />
-                            )}
-                            {n.type === "comment" && (
-                              <MessageCircle size={10} className="text-blue-500" />
-                            )}
-                            {n.type === "friend" && (
-                              <UserPlus size={10} className="text-green-500" />
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm">
-                            <span className="font-bold">{n.user.name}</span> {n.text}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Link
-                    to="/notifications"
-                    onClick={() => setIsNotifOpen(false)}
-                    className="block w-full text-center py-3 bg-gray-50 text-sm font-bold text-blue-600 hover:bg-gray-100 transition-colors"
+            {user ? (
+              <>
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={() => setIsNotifOpen(!isNotifOpen)}
+                    className={`relative p-2 rounded-full transition-all ${isNotifOpen ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"
+                      }`}
                   >
-                    View All Notifications
-                  </Link>
-                </div>
-              )}
-            </div>
+                    <Bell size={20} />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border border-white font-bold">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
 
-            <Link
-              to="/messages"
-              className="hidden sm:block p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all"
-              title="Messages"
-            >
-              <MessageSquare size={20} />
-            </Link>
-            <div className="h-8 w-[1px] bg-gray-200 hidden sm:block"></div>
-            <Link
-              to={`/profile/${user?.id}`}
-              className="flex items-center gap-2 pl-2 hover:opacity-80 transition-opacity"
-            >
-              <img
-                src={user?.avatarUrl}
-                className="w-8 h-8 rounded-full border border-gray-100"
-                alt={user?.fullName}
-              />
-              <span className="font-bold text-sm hidden sm:block">
-                {user?.fullName}
-              </span>
-            </Link>
+                  {/* Notification Dropdown */}
+                  {isNotifOpen && (
+                    <NotificationDropdown
+                      notifications={notifications}
+                      onMarkAsRead={markAsRead}
+                      onMarkAllAsRead={markAllAsRead}
+                      onClose={() => setIsNotifOpen(false)}
+                    />
+                  )}
+                </div>
+
+                <Link
+                  to="/messages"
+                  className="hidden sm:block p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+                  title="Messages"
+                >
+                  <MessageSquare size={20} />
+                </Link>
+                <div className="h-8 w-[1px] bg-gray-200 hidden sm:block"></div>
+                <Link
+                  to={`/u/${user?.username}`}
+                  className="flex items-center gap-2 pl-2 hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${user?.fullName}&background=random`}
+                    className="w-8 h-8 rounded-full border border-gray-100 object-cover"
+                    alt={user?.fullName}
+                  />
+                  <span className="font-bold text-sm hidden sm:block">
+                    {user?.fullName}
+                  </span>
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-gray-600 font-bold hover:text-blue-600 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-5 py-2 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-[1536px] mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className={`max-w-[1536px] mx-auto px-4 py-5 grid grid-cols-1 gap-8 ${user ? "lg:grid-cols-12" : "justify-center"}`}>
         {/* Sidebar */}
-        <div
-          className={`
-          lg:col-span-2 lg:block
-          ${isMobileMenuOpen ? "fixed inset-0 z-50 bg-white p-4 shadow-2xl overflow-y-auto" : "hidden"}
-        `}
-        >
-          {isMobileMenuOpen && (
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
-            >
-              <X size={24} />
-            </button>
-          )}
-          <Sidebar onLogoutClick={() => setShowLogoutModal(true)} />
-        </div>
+        {user && (
+          <div
+            className={`
+            lg:col-span-2 lg:block
+            ${isMobileMenuOpen ? "fixed inset-0 z-50 bg-white p-4 shadow-2xl overflow-y-auto" : "hidden"}
+          `}
+          >
+            {isMobileMenuOpen && (
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+              >
+                <X size={24} />
+              </button>
+            )}
+            <Sidebar onLogoutClick={() => setShowLogoutModal(true)} />
+          </div>
+        )}
 
         {/* Page Content */}
-        <main className="lg:col-span-7 md:col-span-12 min-h-screen">
+        <main className={`${user ? "lg:col-span-7 col-span-12" : "col-span-12 max-w-4xl mx-auto w-full"} min-h-screen`}>
           <Outlet />
         </main>
 
         {/* Suggested Friends Sidebar */}
-        <aside className="lg:col-span-3 hidden lg:block space-y-6">
-          <div className="bg-white rounded-xl shadow-sm p-3.5 border border-gray-100 top-24">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h3 className="font-bold text-gray-800 text-sm">Gợi ý cho bạn</h3>
-              <Link to="/friends" className="text-[11px] font-bold text-blue-600 hover:underline">
-                Xem tất cả
-              </Link>
-            </div>
-            <div className="space-y-3.5">
-              {SUGGESTED_FRIENDS.map((friend) => (
-                <div key={friend.id} className="flex items-center justify-between group px-1">
-                  <Link
-                    to={`/profile/${friend.id}`}
-                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity min-w-0"
-                  >
-                    <img
-                      src={friend.avatar}
-                      className="w-8 h-8 rounded-full object-cover ring-1 ring-gray-50 shadow-sm"
-                      alt=""
-                    />
-                    <div className="overflow-hidden">
-                      <p className="font-bold text-[13px] truncate">{friend.name}</p>
-                      <p className="text-[10px] text-gray-400">@{friend.username}</p>
-                    </div>
-                  </Link>
-                  <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95 shrink-0">
-                    <UserPlus size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 border-t border-gray-50 pt-4">
+        {user && (
+          <aside className="lg:col-span-3 hidden lg:block space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-3.5 border border-gray-100 top-24">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h3 className="font-bold text-gray-800 text-sm">Bạn bè trực tuyến</h3>
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                <h3 className="font-bold text-gray-800 text-sm">Gợi ý cho bạn</h3>
+                <Link to="/friends" className="text-[11px] font-bold text-blue-600 hover:underline">
+                  Xem tất cả
+                </Link>
               </div>
-              <div className="space-y-3">
-                {ONLINE_FRIENDS.map((friend) => (
-                  <Link
-                    to={`/profile/${friend.id}`}
-                    key={friend.id}
-                    className="flex items-center gap-2.5 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
+              <div className="space-y-3.5">
+                {SUGGESTED_FRIENDS.map((friend) => (
+                  <div key={friend.id} className="flex items-center justify-between group px-1">
+                    <Link
+                      to={`/u/${friend.username}`}
+                      className="flex items-center gap-2.5 hover:opacity-80 transition-opacity min-w-0"
+                    >
                       <img
                         src={friend.avatar}
-                        className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-gray-50"
+                        className="w-8 h-8 rounded-full object-cover ring-1 ring-gray-50 shadow-sm"
                         alt=""
                       />
-                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                      <p className="font-bold text-[13px] truncate">{friend.name}</p>
-                      <p className="text-[9px] text-green-600 font-bold uppercase tracking-wider">Online</p>
-                    </div>
-                  </Link>
+                      <div className="overflow-hidden">
+                        <p className="font-bold text-[13px] truncate">{friend.name}</p>
+                        <p className="text-[10px] text-gray-400">@{friend.username}</p>
+                      </div>
+                    </Link>
+                    <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95 shrink-0">
+                      <UserPlus size={16} />
+                    </button>
+                  </div>
                 ))}
               </div>
-            </div>
 
-            <div className="mt-8 px-1 text-[10px] text-gray-400 font-medium space-x-2 border-t border-gray-50 pt-4">
-              <Link to="/privacy" className="hover:underline">Bảo mật</Link>
-              <Link to="/terms" className="hover:underline">Điều khoản</Link>
-              <span>© 2024 NexusSocial</span>
+              <div className="mt-8 border-t border-gray-50 pt-4">
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <h3 className="font-bold text-gray-800 text-sm">Bạn bè trực tuyến</h3>
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                </div>
+                <div className="space-y-3">
+                  {ONLINE_FRIENDS.map((friend) => (
+                    <Link
+                      to={`/u/${friend.username}`}
+                      key={friend.id}
+                      className="flex items-center gap-2.5 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div>
+                        <img
+                          src={friend.avatar}
+                          className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-gray-50"
+                          alt=""
+                        />
+                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        <p className="font-bold text-[13px] truncate">{friend.name}</p>
+                        <p className="text-[9px] text-green-600 font-bold uppercase tracking-wider">Online</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 px-1 text-[10px] text-gray-400 font-medium space-x-2 border-t border-gray-50 pt-4">
+                <Link to="/privacy" className="hover:underline">Bảo mật</Link>
+                <Link to="/terms" className="hover:underline">Điều khoản</Link>
+                <span>© 2024 NexusSocial</span>
+              </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        )}
       </div>
 
       {/* Logout Modal */}
