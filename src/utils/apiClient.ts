@@ -1,7 +1,7 @@
 import api, { handleApiError } from "../services/api";
 import { API_CONFIG } from "../config/apiConfig";
 import { AxiosRequestConfig } from "axios";
-import { ApiResponse, LoginRequest } from "../../types";
+import { ApiResponse, LoginRequest, FriendStatusDTO } from "../../types";
 
 /**
  * API Request Utilities
@@ -115,6 +115,8 @@ export const userApi = {
 
   getUser: async (userId: string) => apiGet(API_CONFIG.ENDPOINTS.USER.GET_USER(userId)),
 
+  getUserByUsername: async (username: string) => apiGet(API_CONFIG.ENDPOINTS.USER.GET_BY_USERNAME(username)),
+
   updateProfile: async (data: unknown) => apiPatch(API_CONFIG.ENDPOINTS.USER.UPDATE_PROFILE, data),
 
   updateAvatar: async (file: File) => {
@@ -223,13 +225,16 @@ export const postApi = {
  * Friend Utilities
  */
 export const friendApi = {
-  getFriends: async () => apiGet(API_CONFIG.ENDPOINTS.FRIEND.LIST),
+  getFriends: async (username: string) => apiGet(API_CONFIG.ENDPOINTS.FRIEND.LIST(username)),
 
   getSuggestions: async () => apiGet(API_CONFIG.ENDPOINTS.FRIEND.SUGGESTIONS),
 
   getFriendRequests: async () => apiGet(API_CONFIG.ENDPOINTS.FRIEND.REQUESTS),
 
   sendRequest: async (userId: string) => apiPost(API_CONFIG.ENDPOINTS.FRIEND.SEND_REQUEST(userId)),
+
+  cancelRequest: async (userId: string) =>
+    apiDelete(API_CONFIG.ENDPOINTS.FRIEND.CANCEL_REQUEST(userId)),
 
   acceptRequest: async (userId: string) =>
     apiPost(API_CONFIG.ENDPOINTS.FRIEND.ACCEPT_REQUEST(userId)),
@@ -239,6 +244,12 @@ export const friendApi = {
 
   removeFriend: async (userId: string) =>
     apiDelete(API_CONFIG.ENDPOINTS.FRIEND.REMOVE_FRIEND(userId)),
+
+  getRelationshipStatus: async (userId: string): Promise<ApiResponse<FriendStatusDTO>> =>
+    apiGet<ApiResponse<FriendStatusDTO>>(API_CONFIG.ENDPOINTS.FRIEND.GET_STATUS(userId)),
+
+  getMutualFriends: async (userId: string, params?: Record<string, unknown>) =>
+    apiGet(API_CONFIG.ENDPOINTS.FRIEND.MUTUAL_FRIENDS(userId), { params }),
 };
 
 /**
@@ -261,16 +272,29 @@ export const messageApi = {
 /**
  * Notification Utilities
  */
-export const notificationApi = {
-  getNotifications: async (params?: unknown) =>
-    apiGet(API_CONFIG.ENDPOINTS.NOTIFICATION.LIST, { params }),
+import { Notification } from "../../types";
 
-  markAsRead: async (data: unknown) => apiPost(API_CONFIG.ENDPOINTS.NOTIFICATION.MARK_READ, data),
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
+export const notificationApi = {
+  getNotifications: async (params?: Record<string, unknown>) =>
+    apiGet<ApiResponse<Page<Notification>>>(API_CONFIG.ENDPOINTS.NOTIFICATION.LIST, { params }),
+
+  getUnreadCount: async () => apiGet<ApiResponse<number>>(API_CONFIG.ENDPOINTS.NOTIFICATION.UNREAD_COUNT),
+
+  markAsRead: async (notificationId: string) =>
+    apiPatch<ApiResponse<void>>(API_CONFIG.ENDPOINTS.NOTIFICATION.MARK_READ(notificationId)),
+
+  markAllAsRead: async () => apiPatch<ApiResponse<void>>(API_CONFIG.ENDPOINTS.NOTIFICATION.MARK_ALL_READ),
 
   deleteNotification: async (notificationId: string) =>
-    apiDelete(API_CONFIG.ENDPOINTS.NOTIFICATION.DELETE(notificationId)),
-
-  getSettings: async () => apiGet(API_CONFIG.ENDPOINTS.NOTIFICATION.SETTINGS),
+    apiDelete<ApiResponse<void>>(API_CONFIG.ENDPOINTS.NOTIFICATION.DELETE(notificationId)),
 };
 
 /**

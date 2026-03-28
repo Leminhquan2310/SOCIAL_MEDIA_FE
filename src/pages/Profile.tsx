@@ -19,21 +19,27 @@ import {
   Shield,
   Smile,
   User as UserIcon,
+  MessageSquare,
+  UserX,
 } from "lucide-react";
-import { User, Post } from "../../types";
-import { userApi, postApi } from "../utils/apiClient";
+import { User, Post, FriendUserDTO } from "../../types";
+import { userApi, postApi, friendApi } from "../utils/apiClient";
 import EditProfileModal from "../components/EditProfileModal";
 import AvatarCropperModal from "../components/AvatarCropperModal";
 import PostCard from "../components/PostCard";
 import CreatePost from "../components/CreatePost";
 import EditPostModal from "../components/post/EditPostModal";
 import DeletePostModal from "../components/post/DeletePostModal";
+import FriendshipButton from "../components/friend/FriendshipButton";
+import MutualFriendsModal from "../components/friend/MutualFriendsModal";
+import { FriendCard } from "../components/friend/FriendCard";
 
 const Profile: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId, username } = useParams<{ userId?: string; username?: string }>();
   const { user: currentUser, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<"posts" | "about" | "friends" | "photos">("about");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isMutualModalOpen, setIsMutualModalOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,6 +55,10 @@ const Profile: React.FC = () => {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [isDeletingPost, setIsDeletingPost] = useState(false);
+
+  // Friend state
+  const [friends, setFriends] = useState<FriendUserDTO[]>([]);
+  const [isFriendsLoading, setIsFriendsLoading] = useState(false);
 
   const handleAvatarClick = () => {
     if (isOwnProfile) {
@@ -105,10 +115,19 @@ const Profile: React.FC = () => {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        if (!userId || String(userId) === String(currentUser?.id)) {
+        if (!userId && !username) {
+          setProfileUser(currentUser);
+        } else if (userId && String(userId) === String(currentUser?.id)) {
+          setProfileUser(currentUser);
+        } else if (username && username === currentUser?.username) {
           setProfileUser(currentUser);
         } else {
-          const response: any = await userApi.getUser(userId);
+          let response: any;
+          if (username) {
+            response = await userApi.getUserByUsername(username);
+          } else {
+            response = await userApi.getUser(userId!);
+          }
           const userData = response?.data || response;
           setProfileUser(userData);
         }
@@ -121,11 +140,13 @@ const Profile: React.FC = () => {
     };
 
     fetchProfile();
-  }, [userId, currentUser]);
+  }, [userId, username, currentUser]);
 
   useEffect(() => {
     if (activeTab === "posts" && profileUser) {
       fetchUserPosts();
+    } else if (activeTab === "friends" && profileUser) {
+      fetchUserFriends();
     }
   }, [activeTab, profileUser?.id]);
 
@@ -193,6 +214,31 @@ const Profile: React.FC = () => {
       toast.error(error.message || "Xóa bài viết thất bại!");
     } finally {
       setIsDeletingPost(false);
+    }
+  };
+
+  // Friend
+
+  const fetchUserFriends = async () => {
+    if (!profileUser) return;
+    setIsFriendsLoading(true);
+    try {
+      const res: any = await friendApi.getFriends(username);
+      setFriends(res?.data?.content || res?.content || []);
+    } catch (error) {
+      console.error("Failed to fetch user posts:", error);
+    } finally {
+      setIsFriendsLoading(false);
+    }
+  };
+
+  const handleRemoveFriend = async (id: string | number) => {
+    try {
+      await friendApi.removeFriend(String(id));
+      setFriends((prev) => prev.filter((f) => f.id !== id));
+      toast.success("Đã hủy kết bạn");
+    } catch (error: any) {
+      toast.error(error?.message || "Lỗi");
     }
   };
 
@@ -321,14 +367,18 @@ const Profile: React.FC = () => {
                 </button>
               ) : (
                 <>
-                  <button className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 cursor-pointer active:scale-95">
-                    <UserPlus size={16} />
-                    Theo dõi
-                  </button>
-                  <button className="flex items-center gap-2 px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all cursor-pointer active:scale-95">
-                    <MessageCircle size={16} />
-                    Nhắn tin
-                  </button>
+                  {profileUser && (
+                    <FriendshipButton
+                      targetUserId={profileUser.id}
+                      targetUserName={profileUser.fullName || profileUser.username}
+                    />
+                  )}
+                  {currentUser && (
+                    <button className="flex items-center gap-2 px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all cursor-pointer active:scale-95">
+                      <MessageCircle size={16} />
+                      Nhắn tin
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -350,6 +400,17 @@ const Profile: React.FC = () => {
                 Người theo dõi
               </span>
             </div>
+            {profileUser.mutualFriends !== undefined && profileUser.mutualFriends > 0 && (
+              <button
+                onClick={() => setIsMutualModalOpen(true)}
+                className="flex items-center gap-2 hover:bg-blue-50 p-1 px-2 rounded-lg transition-colors cursor-pointer"
+              >
+                <span className="font-black text-blue-600 text-lg">{profileUser.mutualFriends}</span>
+                <span className="text-blue-500 font-bold text-[11px] uppercase tracking-wider">
+                  Manual friends
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -433,9 +494,21 @@ const Profile: React.FC = () => {
           )}
 
           {activeTab === "friends" && (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-              <Users size={48} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 font-medium">Chưa có bạn bè nào.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isFriendsLoading ? (
+                [1, 2, 3, 4].map(i => (
+                  <div
+                    key={i}
+                    className="flex bg-white rounded-xl h-20 animate-pulse border border-gray-100"
+                  />
+                ))
+              ) : friends.length === 0 ? (
+                <p className="col-span-full text-center text-gray-500 py-12 font-medium">You don't have any friends yet.</p>
+              ) : (
+                friends.map((friend) => (
+                  <FriendCard key={friend.id} friend={friend} handleRemoveFriend={handleRemoveFriend} />
+                ))
+              )}
             </div>
           )}
 
@@ -476,6 +549,16 @@ const Profile: React.FC = () => {
             setTempImage(null);
           }}
           onCropComplete={handleCropComplete}
+        />
+      )}
+
+      {/* Mutual Friends Modal */}
+      {profileUser && (
+        <MutualFriendsModal
+          isOpen={isMutualModalOpen}
+          onClose={() => setIsMutualModalOpen(false)}
+          targetUserId={profileUser.id}
+          targetUserName={profileUser.fullName || profileUser.username}
         />
       )}
 

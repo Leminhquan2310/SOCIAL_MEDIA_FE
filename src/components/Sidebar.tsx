@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogoutClick }) => {
 
   const menuItems = [
     { icon: Home, label: "Home", path: "/" },
-    { icon: User, label: "Profile", path: `/profile/${user?.id}` },
+    { icon: User, label: "Profile", path: `/u/${user?.username}` },
     { icon: Users, label: "Friends", path: "/friends" },
     { icon: MessageSquare, label: "Messages", path: "/messages" },
     { icon: Bell, label: "Notifications", path: "/notifications" },

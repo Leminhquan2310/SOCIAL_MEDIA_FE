@@ -48,9 +48,9 @@ api.interceptors.request.use(
     }
 
     // Log requests in development
-    if (API_CONFIG.IS_DEVELOPMENT) {
-      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
-    }
+    // if (API_CONFIG.IS_DEVELOPMENT) {
+    //   console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+    // }
 
     return config;
   },
@@ -87,9 +87,9 @@ api.interceptors.response.use(
   (response) => {
     // Log successful responses in development
     if (API_CONFIG.IS_DEVELOPMENT) {
-      console.log(
-        `[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
-      );
+      // console.log(
+      //   `[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
+      // );
     }
     return response;
   },
@@ -156,11 +156,11 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh thất bại (RT hết hạn hoặc bị thu hồi)
         processQueue(refreshError as AxiosError, null);
-        
+
         setAccessToken(null);
-        
+
         // Redirect về login nếu refresh thất bại hoàn toàn
-        window.location.href = "/login";
+        // window.location.href = "/login"; // Tạm thời tắt để hỗ trợ Guest mode, để Router xử lý
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

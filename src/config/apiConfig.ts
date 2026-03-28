@@ -5,8 +5,9 @@
 
 export const API_CONFIG = {
   // Base API URL - read from environment or use default
-  BASE_URL_ORIGIN: import.meta.env.VITE_API_BASE_URL_ORIGIN || "https://api.nexus-social.mock/v1",
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || "https://api.nexus-social.mock/v1",
+  BASE_URL_ORIGIN: import.meta.env.VITE_API_BASE_URL_ORIGIN || "http://localhost:8080",
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
+  WS_URL: import.meta.env.VITE_WS_URL || "http://localhost:8080/ws-notifications",
 
   // Timeout duration in milliseconds
   TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || "10000"),
@@ -25,6 +26,7 @@ export const API_CONFIG = {
     USER: {
       PROFILE: "/auth/me",
       GET_USER: (id: string) => `/users/${id}`,
+      GET_BY_USERNAME: (username: string) => `/users/username/${username}`,
       UPDATE_PROFILE: "/users/profile/update",
       UPDATE_AVATAR: "/users/profile/avatar",
       GET_FOLLOWERS: (id: string) => `/users/${id}/followers`,
@@ -62,13 +64,16 @@ export const API_CONFIG = {
 
     // Friends endpoints
     FRIEND: {
-      LIST: "/friends",
+      LIST: (username: string) => `/friends/${username}`,
       SUGGESTIONS: "/friends/suggestions",
       REQUESTS: "/friends/requests",
       SEND_REQUEST: (id: string) => `/friends/request/${id}`,
+      CANCEL_REQUEST: (id: string) => `/friends/request/${id}`,
       ACCEPT_REQUEST: (id: string) => `/friends/accept/${id}`,
       DECLINE_REQUEST: (id: string) => `/friends/decline/${id}`,
       REMOVE_FRIEND: (id: string) => `/friends/${id}`,
+      GET_STATUS: (id: string) => `/friends/status/${id}`,
+      MUTUAL_FRIENDS: (id: string) => `/friends/mutual/${id}`,
     },
 
     // Message endpoints
@@ -83,9 +88,10 @@ export const API_CONFIG = {
     // Notification endpoints
     NOTIFICATION: {
       LIST: "/notifications",
-      MARK_READ: "/notifications/mark-read",
+      MARK_READ: (id: string) => `/notifications/${id}/read`,
+      MARK_ALL_READ: "/notifications/read-all",
+      UNREAD_COUNT: "/notifications/unread-count",
       DELETE: (id: string) => `/notifications/${id}`,
-      SETTINGS: "/notifications/settings",
     },
 
     // Search endpoints
