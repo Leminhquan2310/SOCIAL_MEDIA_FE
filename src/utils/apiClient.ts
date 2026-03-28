@@ -225,7 +225,7 @@ export const postApi = {
  * Friend Utilities
  */
 export const friendApi = {
-  getFriends: async () => apiGet(API_CONFIG.ENDPOINTS.FRIEND.LIST),
+  getFriends: async (username: string) => apiGet(API_CONFIG.ENDPOINTS.FRIEND.LIST(username)),
 
   getSuggestions: async () => apiGet(API_CONFIG.ENDPOINTS.FRIEND.SUGGESTIONS),
 
@@ -272,19 +272,29 @@ export const messageApi = {
 /**
  * Notification Utilities
  */
+import { Notification } from "../../types";
+
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
 export const notificationApi = {
   getNotifications: async (params?: Record<string, unknown>) =>
-    apiGet(API_CONFIG.ENDPOINTS.NOTIFICATION.LIST, { params }),
+    apiGet<ApiResponse<Page<Notification>>>(API_CONFIG.ENDPOINTS.NOTIFICATION.LIST, { params }),
 
-  getUnreadCount: async () => apiGet(API_CONFIG.ENDPOINTS.NOTIFICATION.UNREAD_COUNT),
+  getUnreadCount: async () => apiGet<ApiResponse<number>>(API_CONFIG.ENDPOINTS.NOTIFICATION.UNREAD_COUNT),
 
   markAsRead: async (notificationId: string) =>
-    apiPatch(API_CONFIG.ENDPOINTS.NOTIFICATION.MARK_READ(notificationId)),
+    apiPatch<ApiResponse<void>>(API_CONFIG.ENDPOINTS.NOTIFICATION.MARK_READ(notificationId)),
 
-  markAllAsRead: async () => apiPatch(API_CONFIG.ENDPOINTS.NOTIFICATION.MARK_ALL_READ),
+  markAllAsRead: async () => apiPatch<ApiResponse<void>>(API_CONFIG.ENDPOINTS.NOTIFICATION.MARK_ALL_READ),
 
   deleteNotification: async (notificationId: string) =>
-    apiDelete(API_CONFIG.ENDPOINTS.NOTIFICATION.DELETE(notificationId)),
+    apiDelete<ApiResponse<void>>(API_CONFIG.ENDPOINTS.NOTIFICATION.DELETE(notificationId)),
 };
 
 /**

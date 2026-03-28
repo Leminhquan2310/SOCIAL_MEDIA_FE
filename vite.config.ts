@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
 
     // Inject biến môi trường vào frontend
     define: {
+      global: "window",
       "import.meta.env.VITE_API_BASE_URL": JSON.stringify(env.VITE_API_BASE_URL),
       "import.meta.env.VITE_API_TIMEOUT": JSON.stringify(env.VITE_API_TIMEOUT),
       "import.meta.env.VITE_API_MAX_RETRIES": JSON.stringify(env.VITE_API_MAX_RETRIES),

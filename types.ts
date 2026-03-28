@@ -149,6 +149,7 @@ export interface Notification {
   type: NotificationType;
   referenceId?: string | number;
   isRead: boolean;
+  actionable?: boolean;
   createdAt: string;
 }
 
@@ -163,6 +164,14 @@ export interface FriendStatusDTO {
   status: FriendshipStatus | string;
   friendshipId?: number;
   requesterId?: number;
+}
+
+export interface FriendUserDTO {
+  id: string;
+  fullName: string;
+  username: string;
+  avatarUrl: string;
+  mutualFriendsCount: number;
 }
 
 export interface AuthState {

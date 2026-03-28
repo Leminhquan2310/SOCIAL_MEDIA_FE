@@ -3,8 +3,10 @@ import { UserCheck, UserPlus, Search, UserX, MessageSquare, Clock } from "lucide
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { friendApi } from "../utils/apiClient";
+import { useAuth } from "../contexts/AuthContext";
 
 const Friends: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"all" | "requests" | "suggestions">("all");
   const [friends, setFriends] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
@@ -14,7 +16,7 @@ const Friends: React.FC = () => {
   const fetchFriends = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res: any = await friendApi.getFriends();
+      const res: any = await friendApi.getFriends(user.username);
       setFriends(res?.data?.content || res?.content || []);
     } catch (error) {
       console.error(error);

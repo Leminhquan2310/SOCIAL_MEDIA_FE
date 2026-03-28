@@ -19,8 +19,47 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from "../../constants";
+/**
+ * Main Layout Component
+ * Wraps authenticated pages with header, sidebar, and suggested friends
+ */
+const MainLayout: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, refresh } = useNotification();
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+
+    if (isNotifOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isNotifOpen && notifications]);
+
+  const handleLogout = () => {
+    logout();
+    setShowLogoutModal(false);
+    navigate("/login");
+  };
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -82,6 +121,7 @@ import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from "../../constants";
                       onMarkAsRead={markAsRead}
                       onMarkAllAsRead={markAllAsRead}
                       onClose={() => setIsNotifOpen(false)}
+                      refresh={refresh}
                     />
                   )}
                 </div>
