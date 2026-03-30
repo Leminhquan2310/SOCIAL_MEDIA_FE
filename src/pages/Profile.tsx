@@ -33,6 +33,7 @@ import DeletePostModal from "../components/post/DeletePostModal";
 import FriendshipButton from "../components/friend/FriendshipButton";
 import MutualFriendsModal from "../components/friend/MutualFriendsModal";
 import { FriendCard } from "../components/friend/FriendCard";
+import { useFriendship } from "../hooks/useFriendship";
 
 const Profile: React.FC = () => {
   const { userId, username } = useParams<{ userId?: string; username?: string }>();
@@ -56,9 +57,11 @@ const Profile: React.FC = () => {
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [isDeletingPost, setIsDeletingPost] = useState(false);
 
-  // Friend state
   const [friends, setFriends] = useState<FriendUserDTO[]>([]);
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+  const { status } = useFriendship(profileUser?.id);
+
+  const isOwnProfile = String(profileUser?.id) === String(currentUser?.id);
 
   const handleAvatarClick = () => {
     if (isOwnProfile) {
@@ -145,10 +148,20 @@ const Profile: React.FC = () => {
   useEffect(() => {
     if (activeTab === "posts" && profileUser) {
       fetchUserPosts();
-    } else if (activeTab === "friends" && profileUser) {
+    }
+
+    if (activeTab === "friends" && profileUser) {
+      const isFriend = status === "ACCEPTED";
+      if (profileUser.displayFriendsStatus === "ONLY_ME" && !isOwnProfile) {
+        return;
+      };
+      if (profileUser.displayFriendsStatus == "FRIEND_ONLY" && !isOwnProfile && !isFriend) {
+        return;
+      }
+
       fetchUserFriends();
     }
-  }, [activeTab, profileUser?.id]);
+  }, [activeTab, profileUser?.id, status]);
 
   const fetchUserPosts = async () => {
     if (!profileUser) return;
@@ -278,8 +291,6 @@ const Profile: React.FC = () => {
     );
   }
 
-  const isOwnProfile = String(profileUser.id) === String(currentUser?.id);
-
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return null;
     try {
@@ -312,6 +323,31 @@ const Profile: React.FC = () => {
     { icon: <Calendar size={20} />, label: "Tham gia", value: formatDate(profileUser.createdAt), color: "text-indigo-600", show: true },
     { icon: <Shield size={20} />, label: "Đăng nhập qua", value: providerLabel(profileUser.authProvider), color: "text-teal-600", show: isOwnProfile },
   ].filter((item) => item.show && item.value);
+
+  const FriendsLoading = () => (
+    <>
+      {[1, 2, 3, 4].map(i => (
+        <div
+          key={i}
+          className="flex bg-white rounded-xl h-20 animate-pulse border border-gray-100"
+        />
+      ))}
+    </>
+  );
+
+  const FriendsEmpty = ({ isOwnProfile }: { isOwnProfile: boolean }) => (
+    <p className="col-span-full text-center text-gray-500 py-12 font-medium">
+      {isOwnProfile
+        ? "You don't have any friends yet."
+        : "This account has no friends yet."}
+    </p>
+  );
+
+  const FriendsPrivate = () => (
+    <p className="col-span-full text-center text-gray-500 py-12 font-medium">
+      You do not have permission to view this person's friend list.
+    </p>
+  );
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -495,18 +531,21 @@ const Profile: React.FC = () => {
 
           {activeTab === "friends" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {isFriendsLoading ? (
-                [1, 2, 3, 4].map(i => (
-                  <div
-                    key={i}
-                    className="flex bg-white rounded-xl h-20 animate-pulse border border-gray-100"
-                  />
-                ))
+              {profileUser.displayFriendsStatus === "ONLY_ME" && !isOwnProfile ? (
+                <FriendsPrivate />
+              ) : profileUser.displayFriendsStatus === "FRIEND_ONLY" && !isOwnProfile && status !== "ACCEPTED" ? (
+                <FriendsPrivate />
+              ) : isFriendsLoading ? (
+                <FriendsLoading />
               ) : friends.length === 0 ? (
-                <p className="col-span-full text-center text-gray-500 py-12 font-medium">You don't have any friends yet.</p>
+                <FriendsEmpty isOwnProfile={isOwnProfile} />
               ) : (
                 friends.map((friend) => (
-                  <FriendCard key={friend.id} friend={friend} handleRemoveFriend={handleRemoveFriend} />
+                  <FriendCard
+                    key={friend.id}
+                    friend={friend}
+                    handleRemoveFriend={handleRemoveFriend}
+                  />
                 ))
               )}
             </div>
