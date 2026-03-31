@@ -148,7 +148,7 @@ export interface Notification {
   actor: User;
   type: NotificationType;
   referenceId?: string | number;
-  isRead: boolean;
+  read: boolean;
   actionable?: boolean;
   createdAt: string;
 }
@@ -172,6 +172,7 @@ export interface FriendUserDTO {
   username: string;
   avatarUrl: string;
   mutualFriendsCount: number;
+  exactMatch?: number;
 }
 
 export interface AuthState {

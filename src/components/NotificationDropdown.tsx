@@ -108,7 +108,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             <div
               key={n.id}
               onClick={() => handleNotificationClick(n)}
-              className={`p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0 ${!n.isRead ? "bg-blue-50/30" : ""
+              className={`p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0 ${!n.read ? "bg-blue-50/30" : ""
                 }`}
             >
               <div className="relative shrink-0">
@@ -152,7 +152,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   </div>
                 )}
               </div>
-              {!n.isRead && (
+              {!n.read && (
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 shrink-0"></div>
               )}
             </div>
