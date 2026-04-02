@@ -36,56 +36,7 @@ const Home: React.FC = () => {
     setPosts([post, ...posts]);
   };
 
-  const handleLike = async (postId: string) => {
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
 
-    // Optimistic update
-    const wasLiked = post.isLiked;
-    setPosts(prev => prev.map(p =>
-      p.id === postId ? {
-        ...p,
-        isLiked: !wasLiked,
-        likes: wasLiked ? p.likes - 1 : p.likes + 1
-      } : p
-    ));
-
-    try {
-      if (wasLiked) {
-        await postApi.unlikePost(postId);
-      } else {
-        await postApi.likePost(postId);
-      }
-    } catch (error) {
-      // Revert if failed
-      setPosts(prev => prev.map(p =>
-        p.id === postId ? post : p
-      ));
-    }
-  };
-
-  const handleAddComment = async (postId: string, content: string) => {
-    try {
-      const response = await postApi.addComment(postId, { content });
-      // Assuming response contains the updated post or we can just refetch/locally update
-      setPosts(prev => prev.map(p => {
-        if (p.id === postId) {
-          // Find if comment already added or just add it (usually API returns updated Post)
-          return {
-            ...p,
-            commentCount: p.commentCount + 1,
-            // If we want to show the new comment immediately and API returns it:
-            // comments: [...p.comments, response.data] // Assuming response structure
-          };
-        }
-        return p;
-      }));
-      // For simplicity, refetch or just trust the local count update for now 
-      // depends on if API returns the full post.
-    } catch (error) {
-      console.error("Failed to add comment:", error);
-    }
-  };
 
   const handleDeleteConfirm = async () => {
     if (!deletingPostId) return;
@@ -130,8 +81,6 @@ const Home: React.FC = () => {
           <PostCard
             key={post.id}
             post={post}
-            onLike={handleLike}
-            onAddComment={handleAddComment}
             onEdit={setEditingPost}
             onDelete={setDeletingPostId}
           />

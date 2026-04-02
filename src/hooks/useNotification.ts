@@ -47,10 +47,12 @@ export function useNotification() {
       setNotifications((prev) => [newNotif, ...prev]);
       setUnreadCount((prev) => prev + 1);
 
-      // Show toast
-      toast.success(`${newNotif.actor.fullName || newNotif.actor.username} ${getNotificationText(newNotif.type)}`, {
-        position: "bottom-right",
-      });
+      // Show toast if not silent
+      if (!newNotif.isSilent) {
+        toast.success(`${newNotif.actor.fullName || newNotif.actor.username} ${getNotificationText(newNotif.type)}`, {
+          position: "bottom-right",
+        });
+      }
     } catch (error) {
       console.error("Error parsing notification message:", error);
     }

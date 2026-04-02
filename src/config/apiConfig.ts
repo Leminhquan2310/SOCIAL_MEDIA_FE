@@ -46,20 +46,22 @@ export const API_CONFIG = {
       GET_FEED: "/posts/feed",
       GET_USER_POSTS: (userId: string) => `/posts/user/${userId}`,
       SEARCH: "/posts/search",
-      LIKE: (id: string) => `/posts/${id}/like`,
-      UNLIKE: (id: string) => `/posts/${id}/unlike`,
-      GET_LIKES: (id: string) => `/posts/${id}/likes`,
-      COMMENT: (id: string) => `/posts/${id}/comments`,
       SHARE: (id: string) => `/posts/${id}/share`,
     },
 
     // Comment endpoints
     COMMENT: {
-      CREATE: "/comments",
-      UPDATE: (id: string) => `/comments/${id}`,
-      DELETE: (id: string) => `/comments/${id}`,
-      LIKE: (id: string) => `/comments/${id}/like`,
-      UNLIKE: (id: string) => `/comments/${id}/unlike`,
+      BY_POST: (postId: string) => `/posts/${postId}/comments`,
+      UPDATE: (commentId: string) => `/comments/${commentId}`,
+      DELETE: (commentId: string) => `/comments/${commentId}`,
+      REPLIES: (commentId: string) => `/comments/${commentId}/replies`,
+    },
+
+    // Like endpoints
+    LIKE: {
+      TOGGLE: "/likes/toggle",
+      STATUS: "/likes/status",
+      COUNT: "/likes/count",
     },
 
     // Friends endpoints

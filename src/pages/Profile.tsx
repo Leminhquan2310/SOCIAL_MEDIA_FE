@@ -180,35 +180,7 @@ const Profile: React.FC = () => {
     setPosts([post, ...posts]);
   };
 
-  const handleLike = async (postId: string) => {
-    const post = posts.find((p) => p.id === postId);
-    if (!post) return;
 
-    const wasLiked = post.isLiked;
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId ? { ...p, isLiked: !wasLiked, likes: wasLiked ? p.likes - 1 : p.likes + 1 } : p
-      )
-    );
-
-    try {
-      if (wasLiked) await postApi.unlikePost(postId);
-      else await postApi.likePost(postId);
-    } catch (error) {
-      setPosts((prev) => prev.map((p) => (p.id === postId ? post : p)));
-    }
-  };
-
-  const handleAddComment = async (postId: string, content: string) => {
-    try {
-      await postApi.addComment(postId, { content });
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p))
-      );
-    } catch (error) {
-      console.error("Failed to add comment:", error);
-    }
-  };
 
   const handlePostUpdated = (updatedPost: Post) => {
     setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
@@ -513,8 +485,6 @@ const Profile: React.FC = () => {
                     <PostCard
                       key={post.id}
                       post={post}
-                      onLike={handleLike}
-                      onAddComment={handleAddComment}
                       onEdit={setEditingPost}
                       onDelete={setDeletingPostId}
                     />
