@@ -33,6 +33,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       navigate(`/u/${n.actor.username}`);
     } else if (n.type === NotificationType.LIKE_POST || n.type === NotificationType.COMMENT_POST) {
       navigate(`/posts/${n.referenceId}`);
+    } else if (n.type === NotificationType.LIKE_COMMENT || n.type === NotificationType.REPLY_COMMENT) {
+      // Giả sử referenceId là commentId, chúng ta cần tìm postId tương ứng hoặc link trực tiếp
+      // Hiện tại redirect về trang chủ hoặc thông báo chi tiết nếu có
+       navigate(`/posts/${n.referenceId}`); 
     }
   };
 
@@ -62,8 +66,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return "đã chấp nhận lời mời kết bạn của bạn.";
       case NotificationType.LIKE_POST:
         return "đã thích bài viết của bạn.";
+      case NotificationType.LIKE_COMMENT:
+        return "đã thích bình luận của bạn.";
       case NotificationType.COMMENT_POST:
         return "đã bình luận về bài viết của bạn.";
+      case NotificationType.REPLY_COMMENT:
+        return "đã trả lời bình luận của bạn.";
       default:
         return "có tương tác mới với bạn.";
     }
@@ -108,7 +116,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             <div
               key={n.id}
               onClick={() => handleNotificationClick(n)}
-              className={`p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0 ${!n.read ? "bg-blue-50/30" : ""
+              className={`p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0 ${!n.isRead ? "bg-blue-50/30" : ""
                 }`}
             >
               <div className="relative shrink-0">
@@ -124,7 +132,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-800 leading-snug">
-                  <span className="font-bold">{n.actor.fullName || n.actor.username}</span>{" "}
+                  <span className="font-bold">
+                    {n.actor.fullName || n.actor.username}
+                    {n.actorCount && n.actorCount > 1 && (
+                      <span className="font-normal text-gray-500"> và {n.actorCount - 1} người khác</span>
+                    )}
+                  </span>{" "}
                   {getNotificationContent(n)}
                 </p>
                 <p className="text-[11px] text-gray-400 mt-1 font-medium italic">
@@ -152,7 +165,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   </div>
                 )}
               </div>
-              {!n.read && (
+              {!n.isRead && (
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 shrink-0"></div>
               )}
             </div>

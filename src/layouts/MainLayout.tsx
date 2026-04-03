@@ -36,6 +36,9 @@ const MainLayout: React.FC = () => {
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
+    if (isNotifOpen) {
+      refresh();
+    }
 
     const handleClickOutside = (event: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -47,7 +50,7 @@ const MainLayout: React.FC = () => {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [isNotifOpen && notifications]);
+  }, [isNotifOpen]);
 
   const handleLogout = () => {
     logout();

@@ -5,9 +5,9 @@
 
 export const API_CONFIG = {
   // Base API URL - read from environment or use default
-  BASE_URL_ORIGIN: import.meta.env.VITE_API_BASE_URL_ORIGIN || "http://localhost:8080",
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
-  WS_URL: import.meta.env.VITE_WS_URL || "http://localhost:8080/ws-notifications",
+  BASE_URL_ORIGIN: import.meta.env.VITE_API_BASE_URL_ORIGIN || "https://localhost:8080",
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || "https://localhost:8080/api",
+  WS_URL: import.meta.env.VITE_WS_URL || "https://localhost:8080/ws-notifications",
 
   // Timeout duration in milliseconds
   TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || "10000"),

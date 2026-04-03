@@ -118,7 +118,7 @@ export interface Post {
   feeling?: string;
   images: PostImageDto[];
   likeCount: number;
-  liked: boolean;
+  isLiked: boolean;
   commentCount: number;
   comments: Comment[];
   createdAt: string;
@@ -153,9 +153,10 @@ export enum NotificationType {
 export interface Notification {
   id: string | number;
   actor: User;
+  actorCount?: number;
   type: NotificationType;
   referenceId?: string | number;
-  read: boolean;
+  isRead: boolean;
   actionable?: boolean;
   isSilent?: boolean;
   createdAt: string;

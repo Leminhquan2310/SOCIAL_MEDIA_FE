@@ -23,7 +23,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete }) => {
   const [showOptions, setShowOptions] = useState(false);
 
   // Use optimistic like hook
-  const { likeCount, isLiked, toggleLike } = useLikes(post.id, "POST", post.likeCount || 0, post.liked);
+  const { likeCount, isLiked, toggleLike } = useLikes(post.id, "POST", post.likeCount || 0, post.isLiked);
 
   const openImageModal = (url: string) => {
     setSelectedImageUrl(url);
