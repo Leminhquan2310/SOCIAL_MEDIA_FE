@@ -32,10 +32,13 @@ const MainLayout: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead, refresh } = useNotification();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, refreshNotify, refreshUnreadCount } = useNotification();
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
+    if (isNotifOpen) {
+      refreshNotify();
+    }
 
     const handleClickOutside = (event: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -47,7 +50,7 @@ const MainLayout: React.FC = () => {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [isNotifOpen && notifications]);
+  }, [isNotifOpen]);
 
   const handleLogout = () => {
     logout();
@@ -121,7 +124,7 @@ const MainLayout: React.FC = () => {
                       onMarkAsRead={markAsRead}
                       onMarkAllAsRead={markAllAsRead}
                       onClose={() => setIsNotifOpen(false)}
-                      refresh={refresh}
+                      refresh={refreshNotify}
                     />
                   )}
                 </div>

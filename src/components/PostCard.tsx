@@ -7,29 +7,42 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
 import PostCarousel from "./post/PostCarousel";
 import DOMPurify from "dompurify";
-
+import CommentSection from "./comment/CommentSection";
+import { useLikes } from "../hooks/useLikes";
 interface PostCardProps {
   post: Post;
-  onLike: (postId: string) => void;
-  onAddComment: (postId: string, content: string) => void;
   onEdit?: (post: Post) => void;
   onDelete?: (postId: string) => void;
+  highlightCommentId?: string;
+  ancestorIds?: string;
+  isSinglePost?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit, onDelete }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCommentId, ancestorIds, isSinglePost }) => {
   const { user } = useAuth();
-  const [showComments, setShowComments] = useState(false);
-  const [commentText, setCommentText] = useState("");
+  const [showComments, setShowComments] = useState(!!highlightCommentId);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState("");
   const [showOptions, setShowOptions] = useState(false);
+  const postRef = React.useRef<HTMLDivElement>(null);
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-    onAddComment(post.id, commentText);
-    setCommentText("");
-  };
+  // Scroll to post if it's a single post view and no specific comment is targeted
+  React.useEffect(() => {
+    if (isSinglePost && !highlightCommentId && postRef.current) {
+      postRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      postRef.current.classList.add("animate-highlight");
+    }
+  }, [isSinglePost, highlightCommentId]);
+
+  // Open comments if highlightCommentId changes
+  React.useEffect(() => {
+    if (highlightCommentId) {
+      setShowComments(true);
+    }
+  }, [highlightCommentId]);
+
+  // Use optimistic like hook
+  const { likeCount, isLiked, toggleLike } = useLikes(post.id, "POST", post.likeCount || 0, post.isLiked);
 
   const openImageModal = (url: string) => {
     setSelectedImageUrl(url);
@@ -52,7 +65,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
   const isAuthor = user?.id?.toString() === post.author?.id?.toString();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md hover:border-gray-200">
+    <div ref={postRef} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md hover:border-gray-200">
       {/* Header */}
       <div className="p-3.5 flex items-center justify-between relative">
         <Link to={`/u/${post.author?.username}`} className="flex items-center gap-2.5 group">
@@ -137,12 +150,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
       <div className="px-4 py-1.5 border-t border-gray-50 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button
-            onClick={() => onLike(post.id)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all active:scale-95 ${post.isLiked ? "text-rose-500 bg-rose-50" : "text-gray-500 hover:bg-gray-50"
+            onClick={toggleLike}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all active:scale-95 ${isLiked ? "text-rose-500 bg-rose-50" : "text-gray-500 hover:bg-gray-50"
               }`}
           >
-            <Heart size={20} fill={post.isLiked ? "currentColor" : "none"} />
-            <span className="font-bold text-[13.5px]">{post.likes}</span>
+            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+            <span className="font-bold text-[13.5px]">{likeCount}</span>
           </button>
 
           <button
@@ -163,60 +176,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onEdit,
 
       {/* Comments Section */}
       {showComments && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-50 bg-gray-50/20 animate-slide-down">
-          <div className="space-y-3 mb-4 mt-2">
-            {post.comments.map((comment) => (
-              <div key={comment.id} className="flex gap-2.5 animate-fade-in">
-                <Link to={`/profile/${comment.userId}`} className="shrink-0 mt-1">
-                  <img
-                    src={comment.userAvatar}
-                    className="w-8 h-8 rounded-full border border-gray-100 shadow-sm object-cover"
-                    alt=""
-                  />
-                </Link>
-                <div className="flex-1 bg-white p-2.5 rounded-2xl shadow-sm border border-gray-100">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <Link
-                      to={`/profile/${comment.userId}`}
-                      className="font-bold text-[12.5px] text-gray-900 hover:underline"
-                    >
-                      {comment.userName}
-                    </Link>
-                    <span className="text-[10px] text-gray-400">
-                      {formatDistanceToNow(new Date(comment.createdAt))}
-                    </span>
-                  </div>
-                  <p className="text-[13.5px] text-gray-700 leading-normal">{comment.content}</p>
-                </div>
-              </div>
-            ))}
-            {post.comments.length === 0 && (
-              <p className="text-center py-4 text-xs text-gray-400">
-                Chưa có bình luận nào. Hãy là người đầu tiên!
-              </p>
-            )}
-          </div>
-
-          <form onSubmit={handleCommentSubmit} className="flex gap-2 mt-2">
-            <img src={user?.avatarUrl || user?.avatar} className="w-8 h-8 rounded-full shadow-sm object-cover" alt="" />
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Viết bình luận..."
-                className="w-full bg-white border border-gray-200 rounded-full px-4 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10 shadow-sm"
-              />
-              <button
-                type="submit"
-                className="absolute right-2 top-2 p-1 text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
-                disabled={!commentText.trim()}
-              >
-                <Send size={16} />
-              </button>
-            </div>
-          </form>
-        </div>
+        <CommentSection
+          postId={post.id}
+          postOwnerId={post.author?.id}
+          highlightId={highlightCommentId}
+          ancestorIds={ancestorIds}
+        />
       )}
 
       {/* Image Zoom Modal */}

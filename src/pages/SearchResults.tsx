@@ -163,8 +163,6 @@ const SearchResults: React.FC = () => {
                 <PostCard
                   key={post.id}
                   post={post}
-                  onLike={() => { }}
-                  onAddComment={() => { }}
                   onEdit={setEditingPost}
                   onDelete={setDeletingPostId}
                 />

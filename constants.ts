@@ -30,13 +30,16 @@ export const MOCK_POSTS: Post[] = [
     commentCount: 8,
     comments: [
       {
-        id: "c1",
-        userId: "u1",
-        userName: "John Doe",
-        userAvatar: "https://picsum.photos/seed/johndoe/200",
+        id: 1,
+        postId: 1,
+        authorId: 1,
+        authorName: "John Doe",
+        authorAvatar: "https://picsum.photos/seed/johndoe/200",
         content: "Looks amazing! Have fun!",
         createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-        likes: 2,
+        likeCount: 2,
+        isLiked: false,
+        replyCount: 0
       },
     ],
     createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),

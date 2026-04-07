@@ -81,13 +81,23 @@ export interface User {
 }
 
 export interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
+  id: number;
+  postId: number;
+  authorId: number;
+  authorName: string;
+  authorUsername: string;
+  authorAvatar: string;
   content: string;
+  imageUrl?: string;
   createdAt: string;
-  likes: number;
+  updatedAt?: string;
+  parentCommentId?: number | null;
+  parentCommentName?: string | null;
+  parentCommentUsername?: string | null;
+  likeCount: number;
+  liked: boolean;
+  replyCount: number;
+  edited?: boolean;
 }
 
 export enum Privacy {
@@ -110,7 +120,7 @@ export interface Post {
   privacy: Privacy;
   feeling?: string;
   images: PostImageDto[];
-  likes: number;
+  likeCount: number;
   isLiked: boolean;
   commentCount: number;
   comments: Comment[];
@@ -146,11 +156,16 @@ export enum NotificationType {
 export interface Notification {
   id: string | number;
   actor: User;
+  actorCount?: number;
   type: NotificationType;
   referenceId?: string | number;
-  read: boolean;
-  actionable?: boolean;
+  targetId?: string | number;
+  ancestorIds?: string;
+  isRead: boolean;
+  isActionable?: boolean;
+  isSilent?: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type FriendshipStatus =

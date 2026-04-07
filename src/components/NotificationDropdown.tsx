@@ -25,15 +25,52 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const navigate = useNavigate();
 
   const handleNotificationClick = (n: Notification) => {
+    // 1. Mark as read
     onMarkAsRead(n.id);
-    onClose();
 
-    // Redirect logic
+    // 2. Determine target URL
     if (n.type === NotificationType.FRIEND_REQUEST || n.type === NotificationType.FRIEND_ACCEPT) {
-      navigate(`/u/${n.actor.username}`);
-    } else if (n.type === NotificationType.LIKE_POST || n.type === NotificationType.COMMENT_POST) {
-      navigate(`/posts/${n.referenceId}`);
+      const url = `/profile/${n.actor.id}`;
+      navigate(url);
+    } else {
+      const targetPostId = n.targetId || n.referenceId;
+      if (!targetPostId) {
+        console.warn("Notification missing targetId or referenceId:", n);
+        onClose();
+        return;
+      }
+
+      const isCommentRelated = n.type === NotificationType.LIKE_COMMENT ||
+        n.type === NotificationType.REPLY_COMMENT ||
+        n.type === NotificationType.COMMENT_POST;
+
+      let url = `/posts/${targetPostId}`;
+      const queryParams = new URLSearchParams();
+      
+      if (isCommentRelated && n.type !== NotificationType.COMMENT_POST) {
+        queryParams.set("commentId", String(n.referenceId));
+      } else if (n.type === NotificationType.COMMENT_POST) {
+        if (n.targetId && n.referenceId && n.targetId !== n.referenceId) {
+          queryParams.set("commentId", String(n.referenceId));
+        }
+      }
+
+      // Add ancestorIds if available (for nested comment auto-expansion)
+      if (n.ancestorIds) {
+        queryParams.set("ancestors", String(n.ancestorIds));
+      }
+
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+      
+      console.log("Navigating to:", url);
+      navigate(url);
     }
+
+    // 3. Close the dropdown AFTER initiating navigation to ensure Router context is still active
+    onClose();
   };
 
   const handleFriendAction = async (e: React.MouseEvent, n: Notification, action: "accept" | "decline") => {
@@ -62,8 +99,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return "đã chấp nhận lời mời kết bạn của bạn.";
       case NotificationType.LIKE_POST:
         return "đã thích bài viết của bạn.";
+      case NotificationType.LIKE_COMMENT:
+        return "đã thích bình luận của bạn.";
       case NotificationType.COMMENT_POST:
         return "đã bình luận về bài viết của bạn.";
+      case NotificationType.REPLY_COMMENT:
+        return "đã trả lời bình luận của bạn.";
       default:
         return "có tương tác mới với bạn.";
     }
@@ -108,7 +149,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             <div
               key={n.id}
               onClick={() => handleNotificationClick(n)}
-              className={`p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0 ${!n.read ? "bg-blue-50/30" : ""
+              className={`p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0 ${!n.isRead ? "bg-blue-50/30" : ""
                 }`}
             >
               <div className="relative shrink-0">
@@ -124,18 +165,23 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-800 leading-snug">
-                  <span className="font-bold">{n.actor.fullName || n.actor.username}</span>{" "}
+                  <span className="font-bold">
+                    {n.actor.fullName || n.actor.username}
+                    {n.actorCount && n.actorCount > 1 && (
+                      <span className="font-normal text-gray-500"> và {n.actorCount - 1} người khác</span>
+                    )}
+                  </span>{" "}
                   {getNotificationContent(n)}
                 </p>
                 <p className="text-[11px] text-gray-400 mt-1 font-medium italic">
-                  {formatDistanceToNow(new Date(n.createdAt), {
+                  {formatDistanceToNow(new Date(n.updatedAt ?? n.createdAt), {
                     addSuffix: true,
                     locale: vi,
                   })}
                 </p>
 
                 {/* Friend Request Actions */}
-                {n.actionable && n.type === NotificationType.FRIEND_REQUEST && (
+                {n.isActionable && n.type === NotificationType.FRIEND_REQUEST && (
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={(e) => handleFriendAction(e, n, "accept")}
@@ -152,7 +198,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   </div>
                 )}
               </div>
-              {!n.read && (
+              {!n.isRead && (
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 shrink-0"></div>
               )}
             </div>

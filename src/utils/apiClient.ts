@@ -1,7 +1,7 @@
 import api, { handleApiError } from "../services/api";
 import { API_CONFIG } from "../config/apiConfig";
 import { AxiosRequestConfig } from "axios";
-import { ApiResponse, LoginRequest, FriendStatusDTO } from "../../types";
+import { ApiResponse, LoginRequest, FriendStatusDTO, Notification, Comment } from "../../types";
 
 /**
  * API Request Utilities
@@ -203,14 +203,7 @@ export const postApi = {
 
   deletePost: async (postId: string) => apiDelete(API_CONFIG.ENDPOINTS.POST.DELETE(postId)),
 
-  likePost: async (postId: string) => apiPost(API_CONFIG.ENDPOINTS.POST.LIKE(postId)),
 
-  unlikePost: async (postId: string) => apiPost(API_CONFIG.ENDPOINTS.POST.UNLIKE(postId)),
-
-  getLikes: async (postId: string) => apiGet(API_CONFIG.ENDPOINTS.POST.GET_LIKES(postId)),
-
-  addComment: async (postId: string, data: unknown) =>
-    apiPost(API_CONFIG.ENDPOINTS.POST.COMMENT(postId), data),
 
   sharePost: async (postId: string, data?: unknown) =>
     apiPost(API_CONFIG.ENDPOINTS.POST.SHARE(postId), data),
@@ -272,7 +265,7 @@ export const messageApi = {
 /**
  * Notification Utilities
  */
-import { Notification } from "../../types";
+
 
 export interface Page<T> {
   content: T[];
@@ -314,5 +307,53 @@ export const searchApi = {
   searchHashtags: async (query: string, params?: Record<string, unknown>) =>
     apiGet(API_CONFIG.ENDPOINTS.SEARCH.HASHTAGS, {
       params: { q: query, ...(params || {}) },
+    }),
+};
+
+/**
+ * Comment Utilities
+ */
+export const commentApi = {
+  getCommentsByPost: async (postId: string, params?: Record<string, unknown>) =>
+    apiGet<ApiResponse<Page<Comment>>>(API_CONFIG.ENDPOINTS.COMMENT.BY_POST(postId), { params }),
+
+  createComment: async (postId: string, data: any) => {
+    const formData = new FormData();
+    if (data.content) formData.append("content", data.content);
+    if (data.image) formData.append("image", data.image);
+    if (data.parentCommentId) formData.append("parentCommentId", data.parentCommentId);
+
+    return apiPost<ApiResponse<Comment>>(API_CONFIG.ENDPOINTS.COMMENT.BY_POST(postId), formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  updateComment: async (commentId: string, data: unknown) =>
+    apiPut<ApiResponse<Comment>>(API_CONFIG.ENDPOINTS.COMMENT.UPDATE(commentId), data),
+
+  deleteComment: async (commentId: string) =>
+    apiDelete<ApiResponse<void>>(API_CONFIG.ENDPOINTS.COMMENT.DELETE(commentId)),
+
+  getReplies: async (commentId: string) =>
+    apiGet<ApiResponse<Comment[]>>(API_CONFIG.ENDPOINTS.COMMENT.REPLIES(commentId)),
+};
+
+/**
+ * Like Utilities
+ */
+export const likeApi = {
+  toggleLike: async (targetId: string | number, targetType: "POST" | "COMMENT") =>
+    apiPost<ApiResponse<void>>(API_CONFIG.ENDPOINTS.LIKE.TOGGLE, null, {
+      params: { targetId, targetType },
+    }),
+
+  isLiked: async (targetId: string | number, targetType: "POST" | "COMMENT") =>
+    apiGet<ApiResponse<boolean>>(API_CONFIG.ENDPOINTS.LIKE.STATUS, {
+      params: { targetId, targetType },
+    }),
+
+  getLikeCount: async (targetId: string | number, targetType: "POST" | "COMMENT") =>
+    apiGet<ApiResponse<number>>(API_CONFIG.ENDPOINTS.LIKE.COUNT, {
+      params: { targetId, targetType },
     }),
 };

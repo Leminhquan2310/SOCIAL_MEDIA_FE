@@ -13,55 +13,72 @@ export function useNotification() {
   const [unreadCount, setUnreadCount] = useState(0);
   const stompClientRef = useRef<Client | null>(null);
 
-  // Fetch initial data
-  const fetchInitialData = useCallback(async () => {
+  // Fetch initial data notifycation
+  const fetchInitialDataNotify = useCallback(async () => {
     if (!isAuthenticated || !user) return;
     try {
-      const [notifsRes, countRes] = await Promise.all([
-        notificationApi.getNotifications({ size: 20 }),
-        notificationApi.getUnreadCount(),
-      ]);
+      const notifsRes = await notificationApi.getNotifications({ size: 20 });
 
       // Use data from ApiResponse
       if (notifsRes && notifsRes.data) {
         setNotifications(notifsRes.data.content || []);
-      }
-
-      if (countRes) {
-        setUnreadCount(countRes.data || 0);
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
     }
   }, [isAuthenticated, user]);
 
+  const fetchUnreadCount = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+    try {
+      const countRes = await notificationApi.getUnreadCount();
+      if (countRes) {
+        setUnreadCount(countRes.data || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unread count:", error);
+    }
+  }, [isAuthenticated, user]);
+
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   // Handle incoming message
   const handleMessage = useCallback((message: IMessage) => {
     if (import.meta.env.DEV) console.log("Received WebSocket Message:", message.body);
     try {
       const newNotif: Notification = JSON.parse(message.body);
-      setNotifications((prev) => [newNotif, ...prev]);
+      if (newNotif.isSilent
+        && (newNotif.type === NotificationType.LIKE_POST || newNotif.type === NotificationType.LIKE_COMMENT))
+        return;
+
       setUnreadCount((prev) => prev + 1);
 
-      // Show toast
-      toast.success(`${newNotif.actor.fullName || newNotif.actor.username} ${getNotificationText(newNotif.type)}`, {
-        position: "bottom-right",
-      });
+      // Show toast if not silent
+      if (!newNotif.isSilent) {
+        const actorName = newNotif.actor.fullName || newNotif.actor.username;
+        const countText = newNotif.actorCount && newNotif.actorCount > 1
+          ? ` và ${newNotif.actorCount - 1} người khác`
+          : "";
+
+        toast.success(`${actorName}${countText} ${getNotificationText(newNotif)}`, {
+          position: "bottom-right",
+        });
+      }
     } catch (error) {
       console.error("Error parsing notification message:", error);
     }
   }, []);
 
-  const getNotificationText = (type: NotificationType) => {
-    switch (type) {
+  const getNotificationText = (notif: Notification) => {
+    switch (notif.type) {
       case NotificationType.FRIEND_REQUEST: return "đã gửi lời mời kết bạn";
       case NotificationType.FRIEND_ACCEPT: return "đã chấp nhận lời mời kết bạn";
       case NotificationType.LIKE_POST: return "đã thích bài viết của bạn";
+      case NotificationType.LIKE_COMMENT: return "đã thích bình luận của bạn";
       case NotificationType.COMMENT_POST: return "đã bình luận bài viết của bạn";
+      case NotificationType.REPLY_COMMENT: return "đã trả lời bình luận của bạn";
       default: return "có thông báo mới dành cho bạn";
     }
   };
@@ -127,6 +144,7 @@ export function useNotification() {
     unreadCount,
     markAsRead,
     markAllAsRead,
-    refresh: fetchInitialData
+    refreshNotify: fetchInitialDataNotify,
+    refreshUnreadCount: fetchUnreadCount
   };
 }
