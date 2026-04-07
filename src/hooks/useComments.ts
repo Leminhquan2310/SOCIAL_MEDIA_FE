@@ -68,8 +68,14 @@ export function useComments(postId: string | number) {
   };
 
   const removeCommentFromLocalState = (commentId: string | number) => {
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
-    setTotalComments((p) => p - 1);
+    setComments((prev) => {
+      const isRoot = prev.some((c) => c.id === commentId);
+      if (isRoot) {
+        setTotalComments((p) => Math.max(0, p - 1));
+        return prev.filter((c) => c.id !== commentId);
+      }
+      return prev;
+    });
   };
 
   const updateCommentInLocalState = (updatedComment: Comment) => {

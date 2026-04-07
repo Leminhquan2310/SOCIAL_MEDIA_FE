@@ -7,11 +7,13 @@ interface CommentInputProps {
   placeholder?: string;
   autoFocus?: boolean;
   onCancel?: () => void;
+  showImageUpload?: boolean;
+  initialContent?: string;
 }
 
-const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Viết bình luận...", autoFocus, onCancel }) => {
+const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Viết bình luận...", autoFocus, onCancel, showImageUpload = true, initialContent = "" }) => {
   const { user } = useAuth();
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(initialContent);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,15 +75,19 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
           />
 
           <div className="flex items-center justify-between px-2 pb-1">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
-              disabled={isSubmitting}
-              title="Đính kèm ảnh"
-            >
-              <ImageIcon size={18} />
-            </button>
+            {showImageUpload ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+                disabled={isSubmitting}
+                title="Đính kèm ảnh"
+              >
+                <ImageIcon size={18} />
+              </button>
+            ) : (
+              <div></div>
+            )}
 
             <div className="flex items-center gap-1">
               {onCancel && (
@@ -118,13 +124,15 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
           </div>
         )}
 
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileChange}
-        />
+        {showImageUpload && (
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        )}
       </form>
     </div>
   );

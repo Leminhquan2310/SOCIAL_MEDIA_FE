@@ -75,3 +75,20 @@ body {
   height: 0;
   pointer-events: none;
 }
+
+/* Highlight Animation for Notifications Navigation */
+@keyframes highlight-fade {
+  0% { 
+    background-color: rgba(59, 130, 246, 0.3); 
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  }
+  100% { 
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.animate-highlight {
+  animation: highlight-fade 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  border-radius: 0.75rem;
+}

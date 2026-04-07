@@ -1,5 +1,5 @@
 import React from "react";
-import { RouteObject } from "react-router-dom";
+import { RouteObject, Navigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -12,6 +12,13 @@ import RegisterPage from "../pages/RegisterPage";
 import Home from "../pages/Home";
 import Profile from "../pages/Profile";
 import Friends from "../pages/Friends";
+import PostDetail from "../pages/PostDetail";
+import Messages from "../pages/Messages";
+import Notifications from "../pages/Notifications";
+import Settings from "../pages/Settings";
+import Privacy from "../pages/Privacy";
+import Terms from "../pages/Terms";
+import SearchResults from "../pages/SearchResults";
 
 /**
  * Route Configuration
@@ -25,7 +32,7 @@ export const routes: RouteObject[] = [
       {
         path: "/login",
         element: (
-          <ProtectedRoute requireAuth={false}>
+          <ProtectedRoute requireAuth={false} guestOnly={true}>
             <LoginPage />
           </ProtectedRoute>
         ),
@@ -33,7 +40,7 @@ export const routes: RouteObject[] = [
       {
         path: "/register",
         element: (
-          <ProtectedRoute requireAuth={false}>
+          <ProtectedRoute requireAuth={false} guestOnly={true}>
             <RegisterPage />
           </ProtectedRoute>
         ),
@@ -57,6 +64,22 @@ export const routes: RouteObject[] = [
         path: "/profile/:userId",
         element: (
           <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/posts/:postId",
+        element: (
+          <ProtectedRoute>
+            <PostDetail />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/u/:username",
+        element: (
+          <ProtectedRoute requireAuth={false}>
             <Profile />
           </ProtectedRoute>
         ),
@@ -109,20 +132,20 @@ export const routes: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
+      {
+        path: "/search",
+        element: (
+          <ProtectedRoute>
+            <SearchResults />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
 
-  // Catch all - 404
+  // Catch all - redirect to home
   {
     path: "*",
-    element: <Navigate to="/" />,
+    element: <Navigate to="/" replace />,
   },
 ];
-
-// Import Navigate type
-import { Navigate } from "react-router-dom";
-import Messages from "@/src/pages/Messages";
-import Notifications from "@/src/pages/Notifications";
-import { Settings } from "lucide-react";
-import Privacy from "@/src/pages/Privacy";
-import Terms from "@/src/pages/Terms";

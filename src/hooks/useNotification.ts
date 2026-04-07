@@ -38,24 +38,30 @@ export function useNotification() {
     } catch (error) {
       console.error("Failed to fetch unread count:", error);
     }
-  }, [isAuthenticated, user]);  
+  }, [isAuthenticated, user]);
 
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   // Handle incoming message
   const handleMessage = useCallback((message: IMessage) => {
     if (import.meta.env.DEV) console.log("Received WebSocket Message:", message.body);
     try {
       const newNotif: Notification = JSON.parse(message.body);
-      setNotifications((prev) => [newNotif, ...prev]);
+      if (newNotif.isSilent
+        && (newNotif.type === NotificationType.LIKE_POST || newNotif.type === NotificationType.LIKE_COMMENT))
+        return;
+
       setUnreadCount((prev) => prev + 1);
 
       // Show toast if not silent
       if (!newNotif.isSilent) {
         const actorName = newNotif.actor.fullName || newNotif.actor.username;
-        const countText = newNotif.actorCount && newNotif.actorCount > 1 
-          ? ` và ${newNotif.actorCount - 1} người khác` 
+        const countText = newNotif.actorCount && newNotif.actorCount > 1
+          ? ` và ${newNotif.actorCount - 1} người khác`
           : "";
-        
+
         toast.success(`${actorName}${countText} ${getNotificationText(newNotif)}`, {
           position: "bottom-right",
         });

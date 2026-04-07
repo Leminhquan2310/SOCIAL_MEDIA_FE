@@ -13,14 +13,33 @@ interface PostCardProps {
   post: Post;
   onEdit?: (post: Post) => void;
   onDelete?: (postId: string) => void;
+  highlightCommentId?: string;
+  ancestorIds?: string;
+  isSinglePost?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCommentId, ancestorIds, isSinglePost }) => {
   const { user } = useAuth();
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(!!highlightCommentId);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState("");
   const [showOptions, setShowOptions] = useState(false);
+  const postRef = React.useRef<HTMLDivElement>(null);
+
+  // Scroll to post if it's a single post view and no specific comment is targeted
+  React.useEffect(() => {
+    if (isSinglePost && !highlightCommentId && postRef.current) {
+      postRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      postRef.current.classList.add("animate-highlight");
+    }
+  }, [isSinglePost, highlightCommentId]);
+
+  // Open comments if highlightCommentId changes
+  React.useEffect(() => {
+    if (highlightCommentId) {
+      setShowComments(true);
+    }
+  }, [highlightCommentId]);
 
   // Use optimistic like hook
   const { likeCount, isLiked, toggleLike } = useLikes(post.id, "POST", post.likeCount || 0, post.isLiked);
@@ -46,7 +65,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete }) => {
   const isAuthor = user?.id?.toString() === post.author?.id?.toString();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md hover:border-gray-200">
+    <div ref={postRef} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md hover:border-gray-200">
       {/* Header */}
       <div className="p-3.5 flex items-center justify-between relative">
         <Link to={`/u/${post.author?.username}`} className="flex items-center gap-2.5 group">
@@ -157,7 +176,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete }) => {
 
       {/* Comments Section */}
       {showComments && (
-        <CommentSection postId={post.id} />
+        <CommentSection
+          postId={post.id}
+          postOwnerId={post.author?.id}
+          highlightId={highlightCommentId}
+          ancestorIds={ancestorIds}
+        />
       )}
 
       {/* Image Zoom Modal */}

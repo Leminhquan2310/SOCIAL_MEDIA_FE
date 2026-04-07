@@ -85,6 +85,7 @@ export interface Comment {
   postId: number;
   authorId: number;
   authorName: string;
+  authorUsername: string;
   authorAvatar: string;
   content: string;
   imageUrl?: string;
@@ -92,9 +93,11 @@ export interface Comment {
   updatedAt?: string;
   parentCommentId?: number | null;
   parentCommentName?: string | null;
+  parentCommentUsername?: string | null;
   likeCount: number;
   liked: boolean;
   replyCount: number;
+  edited?: boolean;
 }
 
 export enum Privacy {
@@ -156,8 +159,10 @@ export interface Notification {
   actorCount?: number;
   type: NotificationType;
   referenceId?: string | number;
+  targetId?: string | number;
+  ancestorIds?: string;
   isRead: boolean;
-  actionable?: boolean;
+  isActionable?: boolean;
   isSilent?: boolean;
   createdAt: string;
   updatedAt?: string;

@@ -25,19 +25,52 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const navigate = useNavigate();
 
   const handleNotificationClick = (n: Notification) => {
+    // 1. Mark as read
     onMarkAsRead(n.id);
-    onClose();
 
-    // Redirect logic
+    // 2. Determine target URL
     if (n.type === NotificationType.FRIEND_REQUEST || n.type === NotificationType.FRIEND_ACCEPT) {
-      navigate(`/u/${n.actor.username}`);
-    } else if (n.type === NotificationType.LIKE_POST || n.type === NotificationType.COMMENT_POST) {
-      navigate(`/posts/${n.referenceId}`);
-    } else if (n.type === NotificationType.LIKE_COMMENT || n.type === NotificationType.REPLY_COMMENT) {
-      // Giả sử referenceId là commentId, chúng ta cần tìm postId tương ứng hoặc link trực tiếp
-      // Hiện tại redirect về trang chủ hoặc thông báo chi tiết nếu có
-       navigate(`/posts/${n.referenceId}`); 
+      const url = `/profile/${n.actor.id}`;
+      navigate(url);
+    } else {
+      const targetPostId = n.targetId || n.referenceId;
+      if (!targetPostId) {
+        console.warn("Notification missing targetId or referenceId:", n);
+        onClose();
+        return;
+      }
+
+      const isCommentRelated = n.type === NotificationType.LIKE_COMMENT ||
+        n.type === NotificationType.REPLY_COMMENT ||
+        n.type === NotificationType.COMMENT_POST;
+
+      let url = `/posts/${targetPostId}`;
+      const queryParams = new URLSearchParams();
+      
+      if (isCommentRelated && n.type !== NotificationType.COMMENT_POST) {
+        queryParams.set("commentId", String(n.referenceId));
+      } else if (n.type === NotificationType.COMMENT_POST) {
+        if (n.targetId && n.referenceId && n.targetId !== n.referenceId) {
+          queryParams.set("commentId", String(n.referenceId));
+        }
+      }
+
+      // Add ancestorIds if available (for nested comment auto-expansion)
+      if (n.ancestorIds) {
+        queryParams.set("ancestors", String(n.ancestorIds));
+      }
+
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+      
+      console.log("Navigating to:", url);
+      navigate(url);
     }
+
+    // 3. Close the dropdown AFTER initiating navigation to ensure Router context is still active
+    onClose();
   };
 
   const handleFriendAction = async (e: React.MouseEvent, n: Notification, action: "accept" | "decline") => {
@@ -141,14 +174,14 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   {getNotificationContent(n)}
                 </p>
                 <p className="text-[11px] text-gray-400 mt-1 font-medium italic">
-                  {formatDistanceToNow(new Date(n.createdAt), {
+                  {formatDistanceToNow(new Date(n.updatedAt ?? n.createdAt), {
                     addSuffix: true,
                     locale: vi,
                   })}
                 </p>
 
                 {/* Friend Request Actions */}
-                {n.actionable && n.type === NotificationType.FRIEND_REQUEST && (
+                {n.isActionable && n.type === NotificationType.FRIEND_REQUEST && (
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={(e) => handleFriendAction(e, n, "accept")}

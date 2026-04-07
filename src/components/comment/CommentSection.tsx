@@ -4,12 +4,16 @@ import CommentItem from "./CommentItem";
 import CommentInput from "./CommentInput";
 import { Loader2 } from "lucide-react";
 import { commentApi } from "../../utils/apiClient";
+import toast from "react-hot-toast";
 
 interface CommentSectionProps {
   postId: string | number;
+  postOwnerId?: string | number;
+  highlightId?: string | number;
+  ancestorIds?: string;
 }
 
-const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
+const CommentSection: React.FC<CommentSectionProps> = ({ postId, postOwnerId, highlightId, ancestorIds }) => {
   const {
     comments,
     totalComments,
@@ -19,6 +23,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     loadReplies,
     addCommentToLocalState,
     removeCommentFromLocalState,
+    updateCommentInLocalState,
   } = useComments(postId);
 
   const handleCreateRootComment = async (content: string, image?: File) => {
@@ -28,7 +33,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         image,
       });
       if (response && response.data) {
-
         addCommentToLocalState(response.data);
       }
     } catch (e) {
@@ -52,13 +56,28 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
   };
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!window.confirm("Bạn có chắc muốn xoá bình luận này?")) return;
     try {
       await commentApi.deleteComment(String(commentId));
       removeCommentFromLocalState(commentId);
+      toast.success("Xoá bình luận thành công");
     } catch (error) {
       console.error("Xoá bình luận thất bại", error);
-      alert("Có lỗi xảy ra khi xoá bình luận");
+      toast.error("Có lỗi xảy ra khi xoá bình luận");
+    }
+  };
+
+  const handleEditComment = async (commentId: number, content: string) => {
+    try {
+      const response = await commentApi.updateComment(String(commentId), { content });
+      if (response || response.data) {
+        updateCommentInLocalState(response.data);
+        toast.success("Chỉnh sửa bình luận thành công");
+        return response.data; // Trả về để CommentItem cập nhật cho reply nếu là comment con
+      }
+    } catch (error) {
+      console.error("Sửa bình luận thất bại", error);
+      toast.error("Có lỗi xảy ra khi sửa bình luận");
+      throw error;
     }
   };
 
@@ -71,7 +90,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
             comment={comment}
             onReply={handleReplyComment}
             onDelete={handleDeleteComment}
+            onEdit={handleEditComment}
             onLoadReplies={loadReplies}
+            postOwnerId={postOwnerId}
+            highlightId={highlightId}
+            ancestorIds={ancestorIds}
           />
         ))}
 
