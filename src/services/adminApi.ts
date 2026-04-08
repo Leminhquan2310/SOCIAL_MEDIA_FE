@@ -1,5 +1,5 @@
 import api from "./api";
-import { AdminUserResponseDto, PaginatedResponse, VisitStatDto } from "../../types";
+import { AdminUserResponseDto, PaginatedResponse, VisitStatDto, NewUserStatDto } from "../../types";
 
 export const adminApi = {
   getAllUsers: async (page = 0, size = 10, sortBy = "createdAt", direction = "desc", keyword = "") => {
@@ -16,6 +16,13 @@ export const adminApi = {
 
   getVisitStats: async (range: "week" | "month" | "year" = "week") => {
     const response = await api.get<{ data: VisitStatDto[] }>("/admin/stats/visits", {
+      params: { range },
+    });
+    return response.data.data;
+  },
+
+  getNewUserStats: async (range: "week" | "month" | "year" = "week") => {
+    const response = await api.get<{ data: NewUserStatDto[] }>("/admin/stats/new-users", {
       params: { range },
     });
     return response.data.data;
