@@ -68,7 +68,7 @@ const AdminUsersPage: React.FC = () => {
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-                     Đang tải dữ liệu...
+                    Đang tải dữ liệu...
                   </div>
                 </td>
               </tr>
@@ -110,9 +110,8 @@ const AdminUsersPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.enabled ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.enabled ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}
                     >
                       {user.enabled ? "Hoạt động" : "Bị khóa"}
                     </span>

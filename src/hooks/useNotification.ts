@@ -8,7 +8,7 @@ import { API_CONFIG } from "../config/apiConfig";
 import { toast } from "react-hot-toast";
 
 export function useNotification() {
-  const { user, isAuthenticated, token } = useAuth();
+  const { user, isAuthenticated, token, logout } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const stompClientRef = useRef<Client | null>(null);
@@ -101,6 +101,17 @@ export function useNotification() {
         if (import.meta.env.DEV) console.log("Connected to WebSocket");
         // Subscribe to private queue
         client.subscribe(`/user/queue/notifications`, handleMessage);
+
+        // Subscribe to user status changes for BANNED event
+        client.subscribe(`/topic/user-status-${user.id}`, (message) => {
+          if (message.body === "BANNED") {
+            toast.error("Your account has been banned by the system, you can't access it anymore!", { duration: 6000, position: "top-center" });
+            if (logout) {
+              logout();
+              window.location.href = "/login";
+            }
+          }
+        });
       },
       onStompError: (frame) => {
         console.error("STOMP error", frame);

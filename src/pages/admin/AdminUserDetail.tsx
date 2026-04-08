@@ -9,15 +9,54 @@ const AdminUserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<AdminUserResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBanModalOpen, setIsBanModalOpen] = useState(false);
+  const [banReason, setBanReason] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchUser = () => {
     if (id) {
       adminApi.getUserById(id)
         .then(setUser)
         .catch(console.error)
         .finally(() => setLoading(false));
     }
+  };
+
+  useEffect(() => {
+    fetchUser();
   }, [id]);
+
+  const handleBanUser = async () => {
+    if (!banReason.trim()) return alert("Please enter keyword!");
+    setActionLoading(true);
+    try {
+      await adminApi.banUser(id!, banReason);
+      setUser(prev => prev ? { ...prev, enabled: false } : null);
+      setIsBanModalOpen(false);
+      setBanReason("");
+      alert("Banned account successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Ban account failed!");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnbanUser = async () => {
+    if (!window.confirm("Are you sure you want to unban this account?")) return;
+    setActionLoading(true);
+    try {
+      await adminApi.unbanUser(id!);
+      setUser(prev => prev ? { ...prev, enabled: true } : null);
+      alert("Unbanned account successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Mở khóa thất bại");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -52,11 +91,11 @@ const AdminUserDetail: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* Cover / Header section */}
         <div className="h-32 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100"></div>
-        
+
         <div className="px-8 pb-8 relative">
           {/* Avatar and basic info */}
           <div className="flex flex-col sm:flex-row gap-6 -mt-12 sm:items-end mb-8">
-            <img 
+            <img
               src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.fullName}&size=150`}
               alt={user.fullName}
               className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl object-cover border-4 border-white shadow-md bg-white"
@@ -72,13 +111,34 @@ const AdminUserDetail: React.FC = () => {
                     {user.enabled ? "ACTIVE" : "BANNED"}
                   </span>
                   {user.roles?.map(role => (
-                     <span key={role} className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
-                        {role.replace("ROLE_", "")}
-                     </span>
+                    <span key={role} className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                      {role.replace("ROLE_", "")}
+                    </span>
                   ))}
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 mb-8">
+            {user.enabled ? (
+              <button
+                onClick={() => setIsBanModalOpen(true)}
+                disabled={actionLoading}
+                className="px-6 py-2 bg-red-50 text-red-600 font-medium rounded-lg border border-red-100 hover:bg-red-100 transition-colors disabled:opacity-50"
+              >
+                Khóa tài khoản (Ban)
+              </button>
+            ) : (
+              <button
+                onClick={handleUnbanUser}
+                disabled={actionLoading}
+                className="px-6 py-2 bg-green-50 text-green-600 font-medium rounded-lg border border-green-100 hover:bg-green-100 transition-colors disabled:opacity-50"
+              >
+                Mở khóa tài khoản (Unban)
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -118,7 +178,7 @@ const AdminUserDetail: React.FC = () => {
                   <Calendar className="text-gray-400 shrink-0 mt-0.5" size={18} />
                   <div>
                     <p className="text-xs text-gray-500 font-medium uppercase">Ngày sinh</p>
-                    <p className="text-gray-900">{user.dateOfBirth ? format(new Date(user.dateOfBirth), 'dd/MM/yyyy') : "---"} 
+                    <p className="text-gray-900">{user.dateOfBirth ? format(new Date(user.dateOfBirth), 'dd/MM/yyyy') : "---"}
                       <span className="text-gray-400 ml-2">({user.gender === 'MALE' ? 'Nam' : user.gender === 'FEMALE' ? 'Nữ' : 'Khác'})</span>
                     </p>
                   </div>
@@ -135,7 +195,7 @@ const AdminUserDetail: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-500 font-medium uppercase">Gia nhập ngày</p>
                     <p className="text-gray-900">
-                      {user.createdAt ? format(new Date(user.createdAt), 'HH:mm - dd/MM/yyyy') : "---"} 
+                      {user.createdAt ? format(new Date(user.createdAt), 'HH:mm - dd/MM/yyyy') : "---"}
                       <span className="text-gray-400 ml-2 text-xs">({user.authProvider})</span>
                     </p>
                   </div>
@@ -146,20 +206,56 @@ const AdminUserDetail: React.FC = () => {
 
           {/* Dữ liệu hệ thống / Quyền truy cập */}
           <div className="mt-8 pt-6 border-t border-gray-100">
-             <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 tracking-wider">Cài đặt Quyền riêng tư ban đầu</h3>
-             <div className="flex gap-4">
-               <div className="bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 flex-1">
-                 <p className="text-xs text-gray-500 font-medium">Trạng thái (Profile)</p>
-                 <p className="font-semibold text-gray-800 text-sm mt-0.5">{user.status}</p>
-               </div>
-               <div className="bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 flex-1">
-                 <p className="text-xs text-gray-500 font-medium">Bạn bè hiển thị</p>
-                 <p className="font-semibold text-gray-800 text-sm mt-0.5">{user.displayFriendsStatus}</p>
-               </div>
-             </div>
+            <h3 className="text-sm font-bold uppercase text-gray-400 mb-4 tracking-wider">Cài đặt Quyền riêng tư ban đầu</h3>
+            <div className="flex gap-4">
+              <div className="bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 flex-1">
+                <p className="text-xs text-gray-500 font-medium">Trạng thái (Profile)</p>
+                <p className="font-semibold text-gray-800 text-sm mt-0.5">{user.status}</p>
+              </div>
+              <div className="bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 flex-1">
+                <p className="text-xs text-gray-500 font-medium">Bạn bè hiển thị</p>
+                <p className="font-semibold text-gray-800 text-sm mt-0.5">{user.displayFriendsStatus}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Ban Modal */}
+      {isBanModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Khóa tài khoản</h3>
+            <p className="text-gray-500 text-sm mb-6">Bạn đang thực hiện thao tác khóa tài khoản của <b>{user.fullName}</b>. Hành động này sẽ đăng xuất người dùng lập tức và ẩn nội dung bài viết của họ.</p>
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">Lý do khóa <span className="text-red-500">*</span></label>
+            <textarea
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="Nhập lý do vi phạm (spam, scam, v.v...)"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all resize-none h-24 mb-6"
+            ></textarea>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setIsBanModalOpen(false)}
+                className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-50 rounded-lg transition-colors"
+                disabled={actionLoading}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleBanUser}
+                disabled={actionLoading || !banReason.trim()}
+                className="px-6 py-2 bg-red-600 text-white font-medium shadow-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                Xác nhận Khóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
