@@ -249,3 +249,8 @@ export interface AdminUserResponseDto {
   enabled: boolean;
   roles: string[];
 }
+
+export interface NewUserStatDto {
+  date: string;
+  newUserCount: number;
+}

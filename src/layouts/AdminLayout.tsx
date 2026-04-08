@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Users, LogOut, Shield, LayoutDashboard } from "lucide-react";
+import { Users, LogOut, Shield, LayoutDashboard, UserPlus } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 const AdminLayout: React.FC = () => {
