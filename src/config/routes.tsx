@@ -4,6 +4,12 @@ import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 
+// Admin Layout
+import AdminLayout from "../layouts/AdminLayout";
+import AdminUsersPage from "../pages/admin/AdminUsersPage";
+import AdminUserDetail from "../pages/admin/AdminUserDetail";
+import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+
 // Auth pages
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
@@ -139,6 +145,34 @@ export const routes: RouteObject[] = [
             <SearchResults />
           </ProtectedRoute>
         ),
+      },
+    ],
+  },
+
+  // Admin App Routes
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "dashboard",
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: "users",
+        element: <AdminUsersPage />,
+      },
+      {
+        path: "users/:id",
+        element: <AdminUserDetail />,
+      },
+      {
+        path: "",
+        element: <Navigate to="/admin/dashboard" replace />,
       },
     ],
   },

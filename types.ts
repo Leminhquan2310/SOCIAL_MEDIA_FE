@@ -196,3 +196,56 @@ export interface AuthState {
   token: string | null;
   refreshToken?: string | null;
 }
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      empty: boolean;
+      sorted: boolean;
+      unsorted: boolean;
+    };
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  last: boolean;
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  sort: {
+    empty: boolean;
+    sorted: boolean;
+    unsorted: boolean;
+  };
+  first: boolean;
+  numberOfElements: number;
+  empty: boolean;
+}
+
+export interface VisitStatDto {
+  date: string;
+  visitCount: number;
+}
+
+export interface AdminUserResponseDto {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+  address: string;
+  phone: string;
+  avatarUrl: string;
+  dateOfBirth: string;
+  gender: string;
+  hobby: string;
+  status: string;
+  displayFriendsStatus: string;
+  authProvider: string;
+  createdAt: string;
+  enabled: boolean;
+  roles: string[];
+}
