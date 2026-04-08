@@ -214,7 +214,13 @@ export const handleApiError = (error: unknown): string => {
     // Some backend APIs return error in 'message' at top level
     // Others wrap it in 'data'
     const errorData = error.response?.data;
-    const message = errorData?.message || errorData?.data?.message;
+    
+    // Ưu tiên lấy chi tiết lỗi cụ thể nằm trong data.message (từ GlobalExceptionHandler)
+    const specificMessage = typeof errorData?.data === 'string' ? errorData?.data : errorData?.data?.message;
+    // Lấy message chung nếu không có chi tiết cụ thể, hoặc bỏ qua nếu nó chỉ là các mã trạng thái như "FORBIDDEN", "BAD_REQUEST"
+    const genericMessage = (errorData?.message && !["FORBIDDEN", "UNAUTHORIZED", "BAD_REQUEST", "NOT_FOUND", "INTERNAL_SERVER_ERROR"].includes(errorData.message)) ? errorData.message : null;
+    
+    const message = specificMessage || genericMessage;
 
     if (message) {
       return message;

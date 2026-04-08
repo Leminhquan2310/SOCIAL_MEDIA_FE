@@ -27,4 +27,14 @@ export const adminApi = {
     });
     return response.data.data;
   },
+
+  banUser: async (id: number | string, reason: string) => {
+    const response = await api.post<{ data: string }>(`/admin/users/${id}/ban`, { reason });
+    return response.data.data;
+  },
+
+  unbanUser: async (id: number | string) => {
+    const response = await api.post<{ data: string }>(`/admin/users/${id}/unban`);
+    return response.data.data;
+  },
 };
