@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Users, LogOut, Shield, LayoutDashboard, UserPlus } from "lucide-react";
+import { Users, LogOut, Shield, LayoutDashboard, AlertTriangle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 const AdminLayout: React.FC = () => {
@@ -10,6 +10,7 @@ const AdminLayout: React.FC = () => {
   const navItems = [
     { name: "Dashboard", path: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
     { name: "User Management", path: "/admin/users", icon: <Users size={20} /> },
+    { name: "Suspects", path: "/admin/suspects", icon: <AlertTriangle size={20} /> },
   ];
 
   return (

@@ -9,6 +9,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import AdminUsersPage from "../pages/admin/AdminUsersPage";
 import AdminUserDetail from "../pages/admin/AdminUserDetail";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import AdminSuspectPage from "../pages/admin/AdminSuspectPage";
 
 // Auth pages
 import LoginPage from "../pages/LoginPage";
@@ -169,6 +170,10 @@ export const routes: RouteObject[] = [
       {
         path: "users/:id",
         element: <AdminUserDetail />,
+      },
+      {
+        path: "suspects",
+        element: <AdminSuspectPage />,
       },
       {
         path: "",

@@ -4,12 +4,15 @@ import { ArrowLeft, Mail, Phone, MapPin, Calendar, Heart, Shield, Clock } from "
 import { adminApi } from "../../services/adminApi";
 import { AdminUserResponseDto } from "../../../types";
 import { format } from "date-fns";
+import toast from "react-hot-toast";
+import AdminActionModal from "./AdminActionModal";
 
 const AdminUserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<AdminUserResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBanModalOpen, setIsBanModalOpen] = useState(false);
+  const [isUnBanModalOpen, setIsUnBanModalOpen] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -27,32 +30,32 @@ const AdminUserDetail: React.FC = () => {
   }, [id]);
 
   const handleBanUser = async () => {
-    if (!banReason.trim()) return alert("Please enter keyword!");
+    if (!banReason.trim()) return toast.error("Please enter keyword!");
     setActionLoading(true);
     try {
       await adminApi.banUser(id!, banReason);
       setUser(prev => prev ? { ...prev, enabled: false } : null);
       setIsBanModalOpen(false);
       setBanReason("");
-      alert("Banned account successfully!");
+      toast.success("Banned account successfully!");
     } catch (err) {
       console.error(err);
-      alert("Ban account failed!");
+      toast.error("Ban account failed!");
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleUnbanUser = async () => {
-    if (!window.confirm("Are you sure you want to unban this account?")) return;
     setActionLoading(true);
     try {
       await adminApi.unbanUser(id!);
       setUser(prev => prev ? { ...prev, enabled: true } : null);
-      alert("Unbanned account successfully!");
+      setIsUnBanModalOpen(false);
+      toast.success("Unbanned account successfully!");
     } catch (err) {
       console.error(err);
-      alert("Mở khóa thất bại");
+      toast.error("Unban account failed!");
     } finally {
       setActionLoading(false);
     }
@@ -132,7 +135,7 @@ const AdminUserDetail: React.FC = () => {
               </button>
             ) : (
               <button
-                onClick={handleUnbanUser}
+                onClick={() => setIsUnBanModalOpen(true)}
                 disabled={actionLoading}
                 className="px-6 py-2 bg-green-50 text-green-600 font-medium rounded-lg border border-green-100 hover:bg-green-100 transition-colors disabled:opacity-50"
               >
@@ -222,40 +225,42 @@ const AdminUserDetail: React.FC = () => {
       </div>
 
       {/* Ban Modal */}
-      {isBanModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Khóa tài khoản</h3>
-            <p className="text-gray-500 text-sm mb-6">Bạn đang thực hiện thao tác khóa tài khoản của <b>{user.fullName}</b>. Hành động này sẽ đăng xuất người dùng lập tức và ẩn nội dung bài viết của họ.</p>
+      <AdminActionModal
+        isOpen={isBanModalOpen}
+        onClose={() => setIsBanModalOpen(false)}
+        onConfirm={handleBanUser}
+        title="Ban account"
+        description={
+          <>
+            Bạn đang thực hiện thao tác khóa tài khoản của <b>{user.fullName}</b>.
+            Hành động này sẽ đăng xuất người dùng lập tức và ẩn nội dung bài viết của họ.
+          </>
+        }
+        confirmText="Confirm Ban"
+        confirmVariant="danger"
+        isLoading={actionLoading}
+        showReasonInput={true}
+        reasonValue={banReason}
+        onReasonChange={setBanReason}
+        reasonPlaceholder="Enter reason (spam, scam, v.v...)"
+      />
 
-            <label className="block text-sm font-medium text-gray-700 mb-2">Lý do khóa <span className="text-red-500">*</span></label>
-            <textarea
-              value={banReason}
-              onChange={(e) => setBanReason(e.target.value)}
-              placeholder="Nhập lý do vi phạm (spam, scam, v.v...)"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all resize-none h-24 mb-6"
-            ></textarea>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setIsBanModalOpen(false)}
-                className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-50 rounded-lg transition-colors"
-                disabled={actionLoading}
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleBanUser}
-                disabled={actionLoading || !banReason.trim()}
-                className="px-6 py-2 bg-red-600 text-white font-medium shadow-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                Xác nhận Khóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Unban Modal */}
+      <AdminActionModal
+        isOpen={isUnBanModalOpen}
+        onClose={() => setIsUnBanModalOpen(false)}
+        onConfirm={handleUnbanUser}
+        title="Unban account"
+        description={
+          <>
+            Do you want unban account: <b>{user.fullName}</b>?
+            The user will be able to login and access the system's features again.
+          </>
+        }
+        confirmText="Confirm Unban"
+        confirmVariant="success"
+        isLoading={actionLoading}
+      />
     </div>
   );
 };

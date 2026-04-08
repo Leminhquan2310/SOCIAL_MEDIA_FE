@@ -254,3 +254,10 @@ export interface NewUserStatDto {
   date: string;
   newUserCount: number;
 }
+
+export interface SuspectIpDto {
+  ip: string;
+  accountCount: number;
+  accounts: AdminUserResponseDto[];
+}
+

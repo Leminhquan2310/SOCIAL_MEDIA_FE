@@ -1,5 +1,5 @@
 import api from "./api";
-import { AdminUserResponseDto, PaginatedResponse, VisitStatDto, NewUserStatDto } from "../../types";
+import { AdminUserResponseDto, PaginatedResponse, VisitStatDto, NewUserStatDto, SuspectIpDto } from "../../types";
 
 export const adminApi = {
   getAllUsers: async (page = 0, size = 10, sortBy = "createdAt", direction = "desc", keyword = "") => {
@@ -35,6 +35,20 @@ export const adminApi = {
 
   unbanUser: async (id: number | string) => {
     const response = await api.post<{ data: string }>(`/admin/users/${id}/unban`);
+    return response.data.data;
+  },
+
+  getSuspiciousIps: async (threshold = 3, windowHours = 24) => {
+    const response = await api.get<{ data: SuspectIpDto[] }>("/admin/suspects/multi-account-ips", {
+      params: { threshold, windowHours },
+    });
+    return response.data.data;
+  },
+
+  getUsersByIp: async (ip: string) => {
+    const response = await api.get<{ data: AdminUserResponseDto[] }>("/admin/suspects/by-ip", {
+      params: { ip },
+    });
     return response.data.data;
   },
 };
