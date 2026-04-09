@@ -36,7 +36,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, postOwnerId, hi
         addCommentToLocalState(response.data);
       }
     } catch (e) {
-      console.error("Lỗi khi thêm bình luận", e);
+      console.error("Error when creating comment", e.message);
+      toast.error(e.message || "You are commenting too fast. Please try again later.");
       throw e; // Ném lại để CommentInput dừng loading
     }
   };

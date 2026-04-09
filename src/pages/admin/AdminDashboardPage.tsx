@@ -33,9 +33,9 @@ type Range = "week" | "month" | "year";
 type ChartType = "line" | "bar";
 
 const RANGE_OPTIONS: { label: string; value: Range }[] = [
-  { label: "7 ngày", value: "week" },
-  { label: "30 ngày", value: "month" },
-  { label: "365 ngày", value: "year" },
+  { label: "7 Days", value: "week" },
+  { label: "30 Days", value: "month" },
+  { label: "1 Year", value: "year" },
 ];
 
 const CHART_TYPE_OPTIONS: { label: string; value: ChartType; icon: React.ReactNode }[] = [
@@ -62,7 +62,7 @@ const AdminDashboardPage: React.FC = () => {
       setVisitStats(vData ?? []);
       setUserStats(uData ?? []);
     } catch {
-      setError("Không thể tải dữ liệu thống kê. Vui lòng thử lại.");
+      setError("Failed to load statistics. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ const AdminDashboardPage: React.FC = () => {
     labels,
     datasets: [
       {
-        label: "Lượt truy cập",
+        label: "Visits",
         data: visitData,
         borderColor: "rgb(59, 130, 246)",
         backgroundColor:
@@ -113,7 +113,7 @@ const AdminDashboardPage: React.FC = () => {
     labels,
     datasets: [
       {
-        label: "Người dùng mới",
+        label: "New Users",
         data: userData,
         borderColor: "rgb(16, 185, 129)",
         backgroundColor:
@@ -169,7 +169,7 @@ const AdminDashboardPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Tổng quan lượt truy cập & người dùng ứng dụng</p>
+          <p className="text-sm text-gray-500 mt-0.5">Overview of application visits and users</p>
         </div>
         <div className="flex items-center gap-1.5 bg-gray-100 rounded-xl p-1">
           {RANGE_OPTIONS.map((opt) => (
@@ -192,10 +192,10 @@ const AdminDashboardPage: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Tổng truy cập", value: totalVisits.toLocaleString(), icon: <Activity size={20} />, bg: "bg-blue-50 text-blue-600" },
-          { label: "Đăng ký mới", value: totalUsers.toLocaleString(), icon: <UserPlus size={20} />, bg: "bg-emerald-50 text-emerald-600" },
-          { label: "Truy cập TB/ngày", value: avgVisits.toLocaleString(), icon: <BarChart2 size={20} />, bg: "bg-indigo-50 text-indigo-600" },
-          { label: "Người dùng TB/ngày", value: avgUsers.toLocaleString(), icon: <Users size={20} />, bg: "bg-teal-50 text-teal-600" },
+          { label: "Total Visits", value: totalVisits.toLocaleString(), icon: <Activity size={20} />, bg: "bg-blue-50 text-blue-600" },
+          { label: "New Registrations", value: totalUsers.toLocaleString(), icon: <UserPlus size={20} />, bg: "bg-emerald-50 text-emerald-600" },
+          { label: "Avg Visits/Day", value: avgVisits.toLocaleString(), icon: <BarChart2 size={20} />, bg: "bg-indigo-50 text-indigo-600" },
+          { label: "Avg Users/Day", value: avgUsers.toLocaleString(), icon: <Users size={20} />, bg: "bg-teal-50 text-teal-600" },
         ].map((card) => (
           <div key={card.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
             <div className={`w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center ${card.bg}`}>
@@ -211,7 +211,7 @@ const AdminDashboardPage: React.FC = () => {
 
       {/* Chart Controls */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Biểu đồ thống kê</h3>
+        <h3 className="text-lg font-semibold text-gray-800">Statistical Charts</h3>
         {/* Chart type selector */}
         <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
           {CHART_TYPE_OPTIONS.map((opt) => (
@@ -236,7 +236,7 @@ const AdminDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Visit Chart Card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="text-base font-semibold text-gray-800 mb-6">Thông số lượt truy cập</h3>
+          <h3 className="text-base font-semibold text-gray-800 mb-6">Visit Statistics</h3>
 
           {loading && (
             <div className="h-72 flex items-center justify-center">
@@ -263,7 +263,7 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* User Chart Card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="text-base font-semibold text-gray-800 mb-6">Thông số người dùng mới</h3>
+          <h3 className="text-base font-semibold text-gray-800 mb-6">New User Statistics</h3>
 
           {loading && (
             <div className="h-72 flex items-center justify-center">

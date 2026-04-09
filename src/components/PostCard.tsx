@@ -9,6 +9,7 @@ import PostCarousel from "./post/PostCarousel";
 import DOMPurify from "dompurify";
 import CommentSection from "./comment/CommentSection";
 import { useLikes } from "../hooks/useLikes";
+import ReportModal from "./post/ReportModal";
 interface PostCardProps {
   post: Post;
   onEdit?: (post: Post) => void;
@@ -24,6 +25,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCo
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState("");
   const [showOptions, setShowOptions] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const postRef = React.useRef<HTMLDivElement>(null);
 
   // Scroll to post if it's a single post view and no specific comment is targeted
@@ -123,7 +125,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCo
                     </button>
                   </>
                 ) : (
-                  <button className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => { setIsReportModalOpen(true); setShowOptions(false); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
                     Báo cáo vi phạm
                   </button>
                 )}
@@ -132,6 +137,18 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCo
           )}
         </div>
       </div>
+
+      {/* Report Modal */}
+      {isReportModalOpen && (
+        <ReportModal 
+          postId={post.id} 
+          onClose={() => setIsReportModalOpen(false)} 
+          onSuccess={() => {
+            // Optional: Show a global toast or something
+            setShowOptions(false);
+          }}
+        />
+      )}
 
       {/* Content */}
       <div className="px-4 pb-3">
