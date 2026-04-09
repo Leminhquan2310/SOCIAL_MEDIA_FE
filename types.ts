@@ -104,6 +104,7 @@ export enum Privacy {
   PUBLIC = "PUBLIC",
   FRIEND_ONLY = "FRIEND_ONLY",
   ONLY_ME = "ONLY_ME",
+  HIDDEN = "HIDDEN",
 }
 
 export interface PostImageDto {
@@ -258,6 +259,17 @@ export interface NewUserStatDto {
 export interface SuspectIpDto {
   ip: string;
   accountCount: number;
+  blocked: boolean;
   accounts: AdminUserResponseDto[];
+}
+
+export interface AdminPostResponseDto {
+  postId: number;
+  userId: number;
+  username: string;
+  content: string;
+  status: Privacy;
+  reportCount: number;
+  createdAt: string;
 }
 

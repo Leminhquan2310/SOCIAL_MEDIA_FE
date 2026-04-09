@@ -9,7 +9,7 @@ import {
   ApiResponse,
 } from "../../types";
 import api, { handleApiError, setAccessToken } from "../services/api";
-import { authApi } from "../utils/apiClient";
+import { authApi } from "../services/authApi";
 import { API_CONFIG } from "../config/apiConfig";
 
 interface AuthContextType extends AuthState {

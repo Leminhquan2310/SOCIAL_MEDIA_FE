@@ -252,4 +252,64 @@ export const handleApiError = (error: unknown): string => {
   return "Đã xảy ra lỗi không mong muốn.";
 };
 
+/**
+ * Generic GET Request
+ */
+export const apiGet = async <T = unknown>(url: string, config?: any): Promise<T> => {
+  try {
+    const response = await api.get<T>(url, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic POST Request
+ */
+export const apiPost = async <T = unknown>(url: string, data?: any, config?: any): Promise<T> => {
+  try {
+    const response = await api.post<T>(url, data, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic PUT Request
+ */
+export const apiPut = async <T = unknown>(url: string, data?: any, config?: any): Promise<T> => {
+  try {
+    const response = await api.put<T>(url, data, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic PATCH Request
+ */
+export const apiPatch = async <T = unknown>(url: string, data?: any, config?: any): Promise<T> => {
+  try {
+    const response = await api.patch<T>(url, data, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic DELETE Request
+ */
+export const apiDelete = async <T = unknown>(url: string, config?: any): Promise<T> => {
+  try {
+    const response = await api.delete<T>(url, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
 export default api;

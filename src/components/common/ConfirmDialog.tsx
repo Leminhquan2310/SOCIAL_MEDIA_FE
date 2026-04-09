@@ -19,8 +19,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = "Xác nhận",
-  cancelText = "Hủy",
+  confirmText = "OK",
+  cancelText = "Cancel",
   type = "danger",
   isLoading = false,
 }) => {
@@ -41,11 +41,11 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      
+
       {/* Dialog */}
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
         <div className="p-6">
@@ -53,20 +53,20 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             <div className={`p-3 rounded-2xl ${iconColors[type]}`}>
               <AlertTriangle size={24} />
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <X size={20} className="text-gray-400" />
             </button>
           </div>
-          
+
           <h3 className="text-xl font-black text-gray-900 mb-2">{title}</h3>
           <p className="text-gray-500 font-medium leading-relaxed">
             {message}
           </p>
         </div>
-        
+
         <div className="p-6 bg-gray-50 flex gap-3">
           <button
             onClick={onClose}

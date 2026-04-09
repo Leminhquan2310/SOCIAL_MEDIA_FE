@@ -10,6 +10,8 @@ import AdminUsersPage from "../pages/admin/AdminUsersPage";
 import AdminUserDetail from "../pages/admin/AdminUserDetail";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminSuspectPage from "../pages/admin/AdminSuspectPage";
+import AdminPostsPage from "../pages/admin/AdminPostsPage";
+import AdminIpBlacklistPage from "../pages/admin/AdminIpBlacklistPage";
 
 // Auth pages
 import LoginPage from "../pages/LoginPage";
@@ -174,6 +176,14 @@ export const routes: RouteObject[] = [
       {
         path: "suspects",
         element: <AdminSuspectPage />,
+      },
+      {
+        path: "posts",
+        element: <AdminPostsPage />,
+      },
+      {
+        path: "ip-blacklist",
+        element: <AdminIpBlacklistPage />,
       },
       {
         path: "",
