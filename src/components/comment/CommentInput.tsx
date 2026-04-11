@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Send, Image as ImageIcon, X } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { validateContent } from "../../utils/contentModeration";
 
 interface CommentInputProps {
   onSubmit: (content: string, imageFile?: File) => Promise<void>;
@@ -14,8 +15,10 @@ interface CommentInputProps {
 const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Viết bình luận...", autoFocus, onCancel, showImageUpload = true, initialContent = "" }) => {
   const { user } = useAuth();
   const [content, setContent] = useState(initialContent);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | undefined>(undefined);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,18 +40,29 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const validateCommentText = (text: string) => {
+    const result = validateContent(text);
+    if (result.matches.length > 0) {
+      return `Content contains restricted words: ${result.matches.join(", ")}`;
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!content.trim() && !imageFile) || isSubmitting) return;
+    if ((!content.trim() && !imageFile) || isSubmitting || validationError) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await onSubmit(content, imageFile);
       setContent("");
       handleRemoveImage();
+      setValidationError(null);
       if (onCancel) onCancel(); // Auto close if it's a reply block
     } catch (error) {
       console.error("Gửi bình luận thất bại:", error);
+      setSubmitError(error instanceof Error ? error.message : "Gửi bình luận thất bại. Vui lòng thử lại.");
     } finally {
       setIsSubmitting(false);
     }
@@ -68,7 +82,12 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
             autoFocus={autoFocus}
             type="text"
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              const nextValue = e.target.value;
+              setContent(nextValue);
+              setValidationError(validateCommentText(nextValue));
+              setSubmitError(null);
+            }}
             placeholder={placeholder}
             className="w-full bg-transparent px-4 py-2 text-[13.5px] focus:outline-none disabled:opacity-50"
             disabled={isSubmitting}
@@ -102,7 +121,7 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
               <button
                 type="submit"
                 className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
-                disabled={(!content.trim() && !imageFile) || isSubmitting}
+                disabled={(!content.trim() && !imageFile) || isSubmitting || !!validationError}
               >
                 <Send size={16} />
               </button>
@@ -124,6 +143,12 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
           </div>
         )}
 
+        {validationError && (
+          <div className="text-sm text-red-600">{validationError}</div>
+        )}
+        {submitError && !validationError && (
+          <div className="text-sm text-red-600">{submitError}</div>
+        )}
         {showImageUpload && (
           <input
             type="file"

@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Image as ImageIcon, Smile, Send, X, MapPin, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { handleApiError } from "../services/api";
 import { postApi } from "../utils/apiClient";
+import { validatePostContent } from "../utils/contentModeration";
 import { Post, Privacy } from "../../types";
 import FeelingSelector from "./post/FeelingSelector";
 import PrivacySelector from "./post/PrivacySelector";
@@ -73,6 +75,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
+  const [contentValidationError, setContentValidationError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -115,10 +119,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
     if (!editor) return;
 
     const htmlContent = editor.getHTML();
-    const isTextEmpty = editor.getText().trim().length === 0;
+    const textContent = editor.getText();
+    const isTextEmpty = textContent.trim().length === 0;
+    const validation = validatePostContent(textContent);
+
+    if (validation.matches.length > 0) {
+      setContentValidationError(`Content contains forbidden terms: ${validation.matches.join(", ")}`);
+      return;
+    }
 
     if (isTextEmpty && images.length === 0) return;
 
+    setSubmitError(null);
     setIsPosting(true);
     try {
       const response = await postApi.createPost({
@@ -137,9 +149,11 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
       setImages([]);
       previews.forEach(p => URL.revokeObjectURL(p));
       setPreviews([]);
+      setContentValidationError(null);
+      setSubmitError(null);
     } catch (error) {
       console.error("Failed to create post:", error);
-      alert("Đăng bài thất bại. Vui lòng thử lại!");
+      setSubmitError(handleApiError(error));
     } finally {
       setIsPosting(false);
     }
@@ -150,7 +164,10 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
     if (!editor) return;
 
     const update = () => {
-      setIsEmpty(editor.getText().trim().length === 0);
+      const textContent = editor.getText();
+      const validation = validatePostContent(textContent);
+      setContentValidationError(validation.matches.length > 0 ? `Content contains forbidden terms: ${validation.matches.join(", ")}` : null);
+      setIsEmpty(textContent.trim().length === 0);
     };
 
     editor.on("update", update);
@@ -220,13 +237,20 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
 
         <button
           onClick={handleSubmit}
-          disabled={(isEmpty && images.length === 0) || isPosting}
+          disabled={(isEmpty && images.length === 0) || isPosting || !!contentValidationError}
           className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
         >
           {isPosting ? "Đang đăng..." : "Đăng bài"}
           {!isPosting && <Send size={16} />}
         </button>
       </div>
+
+      {contentValidationError && (
+        <div className="mt-3 text-sm text-red-600">{contentValidationError}</div>
+      )}
+      {submitError && (
+        <div className="mt-3 text-sm text-red-600">{submitError}</div>
+      )}
 
       <input
         type="file"
