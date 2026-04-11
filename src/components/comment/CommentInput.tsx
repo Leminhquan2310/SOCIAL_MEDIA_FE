@@ -34,7 +34,7 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
   const currentAvatar = user?.avatarUrl || user?.avatar || `https://ui-avatars.com/api/?name=${user?.fullName || user?.username}`;
 
   const handleRemoveImage = () => {
-    setImageFile(null);
+    setImageFile(undefined);
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";

@@ -256,6 +256,11 @@ export interface NewUserStatDto {
   newUserCount: number;
 }
 
+export interface AdminReportStatsDto {
+  totalReportCount: number;
+  totalReportedPosts: number;
+}
+
 export interface SuspectIpDto {
   ip: string;
   accountCount: number;

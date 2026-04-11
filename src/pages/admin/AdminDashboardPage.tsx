@@ -13,8 +13,8 @@ import {
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import { adminApi } from "../../services/adminApi";
-import { VisitStatDto, NewUserStatDto } from "../../../types";
-import { TrendingUp, BarChart2, Activity, Calendar, UserPlus, Users } from "lucide-react";
+import { AdminReportStatsDto, VisitStatDto, NewUserStatDto } from "../../../types";
+import { TrendingUp, BarChart2, Activity, Calendar, UserPlus, Users, ShieldAlert } from "lucide-react";
 
 // Register ChartJS components
 ChartJS.register(
@@ -46,6 +46,7 @@ const CHART_TYPE_OPTIONS: { label: string; value: ChartType; icon: React.ReactNo
 const AdminDashboardPage: React.FC = () => {
   const [visitStats, setVisitStats] = useState<VisitStatDto[]>([]);
   const [userStats, setUserStats] = useState<NewUserStatDto[]>([]);
+  const [reportStats, setReportStats] = useState<AdminReportStatsDto | null>(null);
   const [range, setRange] = useState<Range>("week");
   const [chartType, setChartType] = useState<ChartType>("line");
   const [loading, setLoading] = useState(true);
@@ -55,12 +56,14 @@ const AdminDashboardPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [vData, uData] = await Promise.all([
+      const [vData, uData, rData] = await Promise.all([
         adminApi.getVisitStats(range),
-        adminApi.getNewUserStats(range)
+        adminApi.getNewUserStats(range),
+        adminApi.getReportStats(),
       ]);
       setVisitStats(vData ?? []);
       setUserStats(uData ?? []);
+      setReportStats(rData ?? null);
     } catch {
       setError("Failed to load statistics. Please try again.");
     } finally {
@@ -169,7 +172,7 @@ const AdminDashboardPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Overview of application visits and users</p>
+          <p className="text-sm text-gray-500 mt-0.5">Overview of visits, users, and report metrics</p>
         </div>
         <div className="flex items-center gap-1.5 bg-gray-100 rounded-xl p-1">
           {RANGE_OPTIONS.map((opt) => (
@@ -190,10 +193,11 @@ const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: "Total Visits", value: totalVisits.toLocaleString(), icon: <Activity size={20} />, bg: "bg-blue-50 text-blue-600" },
           { label: "New Registrations", value: totalUsers.toLocaleString(), icon: <UserPlus size={20} />, bg: "bg-emerald-50 text-emerald-600" },
+          { label: "Total Reports", value: reportStats ? reportStats.totalReportCount.toLocaleString() : "0", icon: <ShieldAlert size={20} />, bg: "bg-rose-50 text-rose-600" },
           { label: "Avg Visits/Day", value: avgVisits.toLocaleString(), icon: <BarChart2 size={20} />, bg: "bg-indigo-50 text-indigo-600" },
           { label: "Avg Users/Day", value: avgUsers.toLocaleString(), icon: <Users size={20} />, bg: "bg-teal-50 text-teal-600" },
         ].map((card) => (

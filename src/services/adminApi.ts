@@ -1,5 +1,5 @@
 import api from "./api";
-import { AdminUserResponseDto, PaginatedResponse, VisitStatDto, NewUserStatDto, SuspectIpDto, AdminPostResponseDto, Privacy, Post } from "../../types";
+import { AdminUserResponseDto, PaginatedResponse, VisitStatDto, NewUserStatDto, AdminReportStatsDto, SuspectIpDto, AdminPostResponseDto, Privacy, Post } from "../../types";
 
 /**
  * Interface for Admin API Service
@@ -9,6 +9,7 @@ interface AdminApi {
   getUserById: (id: number | string) => Promise<AdminUserResponseDto>;
   getVisitStats: (range?: "week" | "month" | "year") => Promise<VisitStatDto[]>;
   getNewUserStats: (range?: "week" | "month" | "year") => Promise<NewUserStatDto[]>;
+  getReportStats: () => Promise<AdminReportStatsDto>;
   banUser: (id: number | string, reason: string) => Promise<string>;
   unbanUser: (id: number | string) => Promise<string>;
   getSuspiciousIps: (threshold?: number, windowHours?: number) => Promise<SuspectIpDto[]>;
@@ -52,6 +53,11 @@ export const adminApi: AdminApi = {
     const response = await api.get<{ data: NewUserStatDto[] }>("/admin/stats/new-users", {
       params: { range },
     });
+    return response.data.data;
+  },
+
+  getReportStats: async () => {
+    const response = await api.get<{ data: AdminReportStatsDto }>("/admin/stats/reports");
     return response.data.data;
   },
 
