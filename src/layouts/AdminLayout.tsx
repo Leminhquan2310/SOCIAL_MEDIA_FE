@@ -1,18 +1,44 @@
 import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Users, LogOut, Shield, LayoutDashboard, AlertTriangle } from "lucide-react";
+import { Users, LogOut, Shield, LayoutDashboard, AlertTriangle, Search } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import AdminSearch from "../components/admin/AdminSearch";
 
 const AdminLayout: React.FC = () => {
   const { logout } = useAuth();
   const location = useLocation();
 
   const navItems = [
-    { name: "Dashboard", path: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
-    { name: "User Management", path: "/admin/users", icon: <Users size={20} /> },
-    { name: "Post Management", path: "/admin/posts", icon: <Shield size={20} /> },
-    { name: "Suspects", path: "/admin/suspects", icon: <AlertTriangle size={20} /> },
-    { name: "IP Blacklist", path: "/admin/ip-blacklist", icon: <Shield size={20} /> },
+    { 
+      name: "Dashboard", 
+      path: "/admin/dashboard", 
+      icon: <LayoutDashboard size={20} />, 
+      description: "Overview of platform statistics and activities" 
+    },
+    { 
+      name: "User Management", 
+      path: "/admin/users", 
+      icon: <Users size={20} />, 
+      description: "Manage user information, status, and roles" 
+    },
+    { 
+      name: "Post Management", 
+      path: "/admin/posts", 
+      icon: <Shield size={20} />, 
+      description: "Moderate posts, hide violating content, and manage reports" 
+    },
+    { 
+      name: "Suspects", 
+      path: "/admin/suspects", 
+      icon: <AlertTriangle size={20} />, 
+      description: "Monitor suspicious accounts and unusual activities" 
+    },
+    { 
+      name: "IP Blacklist", 
+      path: "/admin/ip-blacklist", 
+      icon: <Shield size={20} />, 
+      description: "Manage the list of blocked IP addresses" 
+    },
   ];
 
   return (
@@ -63,10 +89,13 @@ const AdminLayout: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
-          <h1 className="text-lg font-semibold text-gray-800">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 gap-4">
+          <h1 className="text-lg font-semibold text-gray-800 hidden lg:block whitespace-nowrap">
             {navItems.find((n) => location.pathname.startsWith(n.path))?.name || "Dashboard"}
           </h1>
+          <div className="flex-1 flex justify-center md:justify-end">
+            <AdminSearch items={navItems} />
+          </div>
         </header>
 
         <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
