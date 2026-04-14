@@ -12,21 +12,21 @@ interface PrivacyOption {
 const OPTIONS: PrivacyOption[] = [
   {
     value: Privacy.PUBLIC,
-    label: "Công khai",
+    label: "Public",
     icon: <Globe size={16} />,
-    description: "Bất kỳ ai cũng có thể xem"
+    description: "Anyone can see"
   },
   {
     value: Privacy.FRIEND_ONLY,
-    label: "Bạn bè",
+    label: "Friends",
     icon: <Users size={16} />,
-    description: "Chỉ bạn bè của bạn mới có thể xem"
+    description: "Only your friends can see"
   },
   {
     value: Privacy.ONLY_ME,
-    label: "Chỉ mình tôi",
+    label: "  Only me",
     icon: <Lock size={16} />,
-    description: "Chỉ mình bạn mới có thể xem"
+    description: "Only you can see"
   }
 ];
 
@@ -53,13 +53,13 @@ const PrivacySelector: React.FC<PrivacySelectorProps> = ({ value, onChange }) =>
 
       {isOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-10" 
-            onClick={() => setIsOpen(false)} 
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setIsOpen(false)}
           />
           <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-2 z-20 animate-fade-in">
             <h4 className="text-[13px] font-bold text-gray-900 px-3 py-2 border-b border-gray-50 mb-1">
-              Chọn đối tượng xem bài viết
+              Choose audience
             </h4>
             <div className="space-y-1">
               {OPTIONS.map((option) => (
@@ -69,9 +69,8 @@ const PrivacySelector: React.FC<PrivacySelectorProps> = ({ value, onChange }) =>
                     onChange(option.value);
                     setIsOpen(false);
                   }}
-                  className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-colors ${
-                    value === option.value ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-colors ${value === option.value ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   <div className={`p-2 rounded-full ${value === option.value ? "bg-blue-100" : "bg-gray-100"}`}>
                     {option.icon}

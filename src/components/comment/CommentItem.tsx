@@ -14,7 +14,7 @@ interface CommentItemProps {
   comment: Comment;
   isReply?: boolean;
   onReplySuccess?: (newReply: Comment) => void;
-  onReply?: (content: string, imageFile?: File, parentId?: number) => Promise<Comment | void>;
+  onReply?: (content: string, imageFile?: File, videoFile?: File, parentId?: number) => Promise<Comment | void>;
   onEdit?: (commentId: number, content: string, imageFile?: File) => Promise<Comment | void>;
   onEditSuccess?: (updatedComment: Comment) => void;
   onDelete?: (commentId: number) => Promise<void>;
@@ -66,10 +66,10 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false, onR
   const isPostOwner = user?.id?.toString() === postOwnerId?.toString();
   const canDelete = isAuthor || isPostOwner;
 
-  const handleReplySubmit = async (content: string, imageFile?: File) => {
+  const handleReplySubmit = async (content: string, imageFile?: File, videoFile?: File) => {
     if (onReply) {
       const parentIdToSend = comment.id; // Luôn reply trực tiếp cho comment này
-      const newReply = await onReply(content, imageFile, parentIdToSend);
+      const newReply = await onReply(content, imageFile, videoFile, parentIdToSend);
       setShowReplyInput(false);
 
       if (newReply) {
@@ -194,14 +194,24 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false, onR
                   />
                 </div>
 
-                {/* Render Attached Image */}
-                {comment.imageUrl && (
+                {/* Render Attached Media */}
+                {comment.mediaUrl && (
                   <div className="mt-1">
-                    <img
-                      src={comment.imageUrl}
-                      alt="Attachment"
-                      className="max-h-48 rounded-xl object-contain border border-gray-200"
-                    />
+                    {comment.mediaType === "VIDEO" ? (
+                      <video
+                        src={comment.mediaUrl}
+                        className="max-h-48 rounded-xl object-contain border border-gray-200"
+                        controls
+                        muted
+                        loop
+                      />
+                    ) : (
+                      <img
+                        src={comment.mediaUrl}
+                        alt="Attachment"
+                        className="max-h-48 rounded-xl object-contain border border-gray-200"
+                      />
+                    )}
                   </div>
                 )}
 

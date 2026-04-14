@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { validateContent } from "../../utils/contentModeration";
 
 interface CommentInputProps {
-  onSubmit: (content: string, imageFile?: File) => Promise<void>;
+  onSubmit: (content: string, imageFile?: File, videoFile?: File) => Promise<void>;
   placeholder?: string;
   autoFocus?: boolean;
   onCancel?: () => void;
@@ -16,7 +16,8 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
   const { user } = useAuth();
   const [content, setContent] = useState(initialContent);
   const [imageFile, setImageFile] = useState<File | undefined>(undefined);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | undefined>(undefined);
+  const [mediaPreview, setMediaPreview] = useState<{ url: string; type: "IMAGE" | "VIDEO" } | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,18 +26,35 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
+      const isVideo = file.type.startsWith("video/");
+      
+      if (isVideo && file.size > 100 * 1024 * 1024) {
+        setSubmitError("Video size exceeds 100MB limit.");
+        return;
+      }
+
       const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
+      
+      if (isVideo) {
+        setVideoFile(file);
+        setImageFile(undefined);
+        setMediaPreview({ url: previewUrl, type: "VIDEO" });
+      } else {
+        setImageFile(file);
+        setVideoFile(undefined);
+        setMediaPreview({ url: previewUrl, type: "IMAGE" });
+      }
+      setSubmitError(null);
     }
   };
 
   const currentAvatar = user?.avatarUrl || user?.avatar || `https://ui-avatars.com/api/?name=${user?.fullName || user?.username}`;
 
-  const handleRemoveImage = () => {
+  const handleRemoveMedia = () => {
     setImageFile(undefined);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
+    setVideoFile(undefined);
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview.url);
+    setMediaPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -55,9 +73,9 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await onSubmit(content, imageFile);
+      await onSubmit(content, imageFile, videoFile);
       setContent("");
-      handleRemoveImage();
+      handleRemoveMedia();
       setValidationError(null);
       if (onCancel) onCancel(); // Auto close if it's a reply block
     } catch (error) {
@@ -118,24 +136,28 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
                   Hủy
                 </button>
               )}
-              <button
-                type="submit"
-                className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
-                disabled={(!content.trim() && !imageFile) || isSubmitting || !!validationError}
-              >
-                <Send size={16} />
-              </button>
+                <button
+                  type="submit"
+                  className="p-1 text-blue-500 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 text-[12px] font-bold px-2"
+                  disabled={(!content.trim() && !imageFile && !videoFile) || isSubmitting || !!validationError}
+                >
+                  {isSubmitting ? "Censoring..." : <Send size={16} />}
+                </button>
             </div>
           </div>
         </div>
 
-        {/* Image Preview Block */}
-        {imagePreview && (
+        {/* Media Preview Block */}
+        {mediaPreview && (
           <div className="relative w-max mt-1 group">
-            <img src={imagePreview} alt="Preview" className="max-h-16 rounded-xl object-contain border border-gray-100" />
+            {mediaPreview.type === "IMAGE" ? (
+              <img src={mediaPreview.url} alt="Preview" className="max-h-16 rounded-xl object-contain border border-gray-100" />
+            ) : (
+              <video src={mediaPreview.url} className="max-h-16 rounded-xl object-contain border border-gray-100" />
+            )}
             <button
               type="button"
-              onClick={handleRemoveImage}
+              onClick={handleRemoveMedia}
               className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
             >
               <X size={10} />
@@ -152,7 +174,7 @@ const CommentInput: React.FC<CommentInputProps> = ({ onSubmit, placeholder = "Vi
         {showImageUpload && (
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileChange}

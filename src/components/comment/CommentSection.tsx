@@ -26,11 +26,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, postOwnerId, hi
     updateCommentInLocalState,
   } = useComments(postId);
 
-  const handleCreateRootComment = async (content: string, image?: File) => {
+  const handleCreateRootComment = async (content: string, image?: File, video?: File) => {
     try {
       const response = await commentApi.createComment(String(postId), {
         content,
         image,
+        video,
       });
       if (response && response.data) {
         addCommentToLocalState(response.data);
@@ -42,11 +43,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, postOwnerId, hi
     }
   };
 
-  const handleReplyComment = async (content: string, image?: File, parentId?: number) => {
+  const handleReplyComment = async (content: string, image?: File, video?: File, parentId?: number) => {
     try {
       const response = await commentApi.createComment(String(postId), {
         content,
         image,
+        video,
         parentCommentId: parentId,
       });
       return response.data;

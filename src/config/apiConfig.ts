@@ -10,7 +10,7 @@ export const API_CONFIG = {
   WS_URL: import.meta.env.VITE_WS_URL || "https://localhost:8080/ws-notifications",
 
   // Timeout duration in milliseconds
-  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || "10000"),
+  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || "30000"),
 
   // API Endpoints
   ENDPOINTS: {

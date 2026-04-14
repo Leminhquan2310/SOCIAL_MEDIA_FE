@@ -9,23 +9,29 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
+    {
+      name: "Dashboard",
+      path: "/admin/dashboard",
+      icon: <LayoutDashboard size={20} />,
+      description: "Overview of platform statistics and activities"
+    },
+    {
+      name: "User Management",
+      path: "/admin/users",
+      icon: <Users size={20} />,
+      description: "Manage user information, status, and roles"
+    },
+    {
+      name: "Post Management",
+      path: "/admin/posts",
+      icon: <Shield size={20} />,
+      description: "Moderate posts, hide violating content, and manage reports"
+    },
     { 
-      name: "Dashboard", 
-      path: "/admin/dashboard", 
+      name: "Media Moderation", 
+      path: "/admin/media", 
       icon: <LayoutDashboard size={20} />, 
-      description: "Overview of platform statistics and activities" 
-    },
-    { 
-      name: "User Management", 
-      path: "/admin/users", 
-      icon: <Users size={20} />, 
-      description: "Manage user information, status, and roles" 
-    },
-    { 
-      name: "Post Management", 
-      path: "/admin/posts", 
-      icon: <Shield size={20} />, 
-      description: "Moderate posts, hide violating content, and manage reports" 
+      description: "Unified stream for reviewing images and videos" 
     },
     { 
       name: "Suspects", 
@@ -33,11 +39,11 @@ const AdminLayout: React.FC = () => {
       icon: <AlertTriangle size={20} />, 
       description: "Monitor suspicious accounts and unusual activities" 
     },
-    { 
-      name: "IP Blacklist", 
-      path: "/admin/ip-blacklist", 
-      icon: <Shield size={20} />, 
-      description: "Manage the list of blocked IP addresses" 
+    {
+      name: "IP Blacklist",
+      path: "/admin/ip-blacklist",
+      icon: <Shield size={20} />,
+      description: "Manage the list of blocked IP addresses"
     },
   ];
 

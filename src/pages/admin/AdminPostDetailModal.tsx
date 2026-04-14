@@ -233,10 +233,10 @@ const AdminPostDetailModal: React.FC<AdminPostDetailModalProps> = ({ postBrief, 
                   />
                 </div>
 
-                {/* Post Images */}
+                {/* Post Media (Images & Videos) */}
                 {post?.images && post.images.length > 0 && (
                   <div className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <PostCarousel images={post.images} onImageClick={() => { }} />
+                    <PostCarousel media={post.images} onMediaClick={() => { }} />
                   </div>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import api from "./api";
-import { AdminUserResponseDto, PaginatedResponse, VisitStatDto, NewUserStatDto, AdminReportStatsDto, SuspectIpDto, AdminPostResponseDto, Privacy, Post } from "../../types";
+import { AdminUserResponseDto, PaginatedResponse, VisitStatDto, NewUserStatDto, AdminReportStatsDto, SuspectIpDto, AdminPostResponseDto, Privacy, Post, AdminMedia, MediaStatus } from "../../types";
 
 /**
  * Interface for Admin API Service
@@ -24,6 +24,10 @@ interface AdminApi {
   getAllBlacklistedIps: (page?: number, size?: number) => Promise<PaginatedResponse<any>>;
   blockIp: (ip: string, reason?: string) => Promise<any>;
   unblockIp: (ip: string) => Promise<any>;
+  // Media Moderation
+  getMediaList: (params: { status?: string; minScore?: number; page?: number; size?: number }) => Promise<any>;
+  updateMediaStatus: (sourceType: string, id: number, status: MediaStatus) => Promise<any>;
+  bulkUpdateMediaStatus: (items: { id: number; sourceType: string }[], status: MediaStatus) => Promise<any>;
 }
 
 /**
@@ -133,4 +137,21 @@ export const adminApi: AdminApi = {
     const response = await api.delete(`/admin/ip-blacklist/unblock/${ip}`);
     return response.data;
   },
+
+  // Media Moderation
+  getMediaList: async (params: { status?: string; minScore?: number; page?: number; size?: number }) => {
+    const response = await api.get<{ data: PaginatedResponse<any> }>("/admin/media", { params });
+    return response.data;
+  },
+
+  updateMediaStatus: async (sourceType: string, id: number, status: string) => {
+    const response = await api.patch<{ data: any }>("/admin/media/status", null, { params: { sourceType, id, status } });
+    return response.data.data;
+  },
+
+  bulkUpdateMediaStatus: async (items: { id: number; sourceType: string }[], status: string) => {
+    const response = await api.patch<{ data: any }>("/admin/media/bulk-status", { items, status });
+    return response.data.data;
+  }
 };
+

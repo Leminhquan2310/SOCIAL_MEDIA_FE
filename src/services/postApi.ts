@@ -30,9 +30,15 @@ export const postApi = {
         formData.append("images", file);
       });
     }
+    if (data.videos && data.videos.length > 0) {
+      data.videos.forEach((file: File) => {
+        formData.append("videos", file);
+      });
+    }
 
     return apiPost(API_CONFIG.ENDPOINTS.POST.CREATE, formData, {
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 300000, // 5 minutes for large media uploads
     });
   },
 
@@ -53,6 +59,11 @@ export const postApi = {
         formData.append("newImages", file);
       });
     }
+    if (data.newVideos && data.newVideos.length > 0) {
+      data.newVideos.forEach((file: File) => {
+        formData.append("newVideos", file);
+      });
+    }
 
     if (data.imageOrder && data.imageOrder.length > 0) {
       data.imageOrder.forEach((ref: string) => {
@@ -62,6 +73,7 @@ export const postApi = {
 
     return apiPut(API_CONFIG.ENDPOINTS.POST.UPDATE(postId), formData, {
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 300000, // 5 minutes for large media uploads
     });
   },
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Globe, Users, Lock } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Globe, Users, Lock, Trash2Icon, PenBoxIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Post } from "../../types";
 import { Privacy } from "../../types";
@@ -83,13 +83,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCo
               </h4>
               {post.feeling && (
                 <span className="text-[13px] text-gray-500 font-normal">
-                  đang cảm thấy <span className="font-semibold text-gray-700">{post.feeling}</span>
+                  feeling <span className="font-semibold text-gray-700">{post.feeling}</span>
                 </span>
               )}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <p className="text-[11.5px] text-gray-400">
-                {formatDistanceToNow(new Date(post.createdAt))} trước
+                {formatDistanceToNow(new Date(post.createdAt))} ago
               </p>
               <span className="text-gray-300 text-[10px]">•</span>
               {getPrivacyIcon(post.privacy)}
@@ -115,17 +115,17 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCo
                       onClick={() => { onEdit?.(post); setShowOptions(false); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     >
-                      Sửa bài viết
+                      <PenBoxIcon size={16} /> Edit post
                     </button>
                     <button
                       onClick={() => { onDelete?.(post.id); setShowOptions(false); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                     >
-                      Xóa bài viết
+                      <Trash2Icon size={16} /> Delete post
                     </button>
                   </>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => { setIsReportModalOpen(true); setShowOptions(false); }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-[13.5px] font-bold text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                   >
@@ -140,9 +140,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCo
 
       {/* Report Modal */}
       {isReportModalOpen && (
-        <ReportModal 
-          postId={post.id} 
-          onClose={() => setIsReportModalOpen(false)} 
+        <ReportModal
+          postId={post.id}
+          onClose={() => setIsReportModalOpen(false)}
           onSuccess={() => {
             // Optional: Show a global toast or something
             setShowOptions(false);
@@ -160,7 +160,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete, highlightCo
 
       {/* Multi-image Carousel */}
       {post.images && post.images.length > 0 && (
-        <PostCarousel images={post.images} onImageClick={openImageModal} />
+        <PostCarousel media={post.images} onMediaClick={openImageModal} />
       )}
 
       {/* Actions */}

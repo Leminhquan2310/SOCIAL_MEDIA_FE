@@ -13,10 +13,12 @@ export const commentApi = {
     const formData = new FormData();
     if (data.content) formData.append("content", data.content);
     if (data.image) formData.append("image", data.image);
+    if (data.video) formData.append("video", data.video);
     if (data.parentCommentId) formData.append("parentCommentId", data.parentCommentId);
 
     return apiPost<ApiResponse<Comment>>(API_CONFIG.ENDPOINTS.COMMENT.BY_POST(postId), formData, {
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 300000, // 5 minutes for potential large media uploads
     });
   },
 
