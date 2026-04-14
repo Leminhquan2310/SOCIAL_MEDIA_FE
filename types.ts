@@ -88,7 +88,8 @@ export interface Comment {
   authorUsername: string;
   authorAvatar: string;
   content: string;
-  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: MediaType;
   createdAt: string;
   updatedAt?: string;
   parentCommentId?: number | null;
@@ -98,6 +99,7 @@ export interface Comment {
   liked: boolean;
   replyCount: number;
   edited?: boolean;
+  mediaStatus?: MediaStatus;
 }
 
 export enum Privacy {
@@ -107,10 +109,37 @@ export enum Privacy {
   HIDDEN = "HIDDEN",
 }
 
+export enum MediaType {
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+}
+
+export enum MediaStatus {
+  ACTIVE = "ACTIVE",
+  FLAGGED = "FLAGGED",
+  REJECTED = "REJECTED",
+  DELETED = "DELETED",
+}
+
+export interface AdminMedia {
+  id: number;
+  url: string;
+  type: MediaType;
+  status: MediaStatus;
+  violationScore: number;
+  sourceType: "POST" | "COMMENT";
+  sourceId: number;
+  ownerName: string;
+  createdAt: string;
+  content: string;
+}
+
 export interface PostImageDto {
   id: number;
-  imageUrl: string;
+  mediaUrl: string;
+  mediaType: MediaType;
   orderIndex: number;
+  status?: MediaStatus;
 }
 
 export interface Post {
@@ -135,6 +164,7 @@ export interface PostCreateRequest {
   privacy: Privacy;
   feeling?: string;
   images?: File[];
+  videos?: File[];
 }
 
 export interface PostUpdateRequest {
@@ -143,6 +173,7 @@ export interface PostUpdateRequest {
   feeling?: string;
   deletedImageIds?: number[];
   newImages?: File[];
+  newVideos?: File[];
 }
 
 export enum NotificationType {

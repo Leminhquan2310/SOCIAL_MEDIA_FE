@@ -11,6 +11,7 @@ import AdminUserDetail from "../pages/admin/AdminUserDetail";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminSuspectPage from "../pages/admin/AdminSuspectPage";
 import AdminPostsPage from "../pages/admin/AdminPostsPage";
+import AdminMediaPage from "../pages/admin/AdminMediaPage";
 import AdminIpBlacklistPage from "../pages/admin/AdminIpBlacklistPage";
 
 // Auth pages
@@ -34,167 +35,171 @@ import SearchResults from "../pages/SearchResults";
  * Defines all application routes with protected/public access
  */
 export const routes: RouteObject[] = [
-  // Auth Routes
-  {
-    element: <AuthLayout />,
-    children: [
-      {
-        path: "/login",
-        element: (
-          <ProtectedRoute requireAuth={false} guestOnly={true}>
-            <LoginPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/register",
-        element: (
-          <ProtectedRoute requireAuth={false} guestOnly={true}>
-            <RegisterPage />
-          </ProtectedRoute>
-        ),
-      },
-    ],
-  },
+    // Auth Routes
+    {
+        element: <AuthLayout />,
+        children: [
+            {
+                path: "/login",
+                element: (
+                    <ProtectedRoute requireAuth={false} guestOnly={true}>
+                        <LoginPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/register",
+                element: (
+                    <ProtectedRoute requireAuth={false} guestOnly={true}>
+                        <RegisterPage />
+                    </ProtectedRoute>
+                ),
+            },
+        ],
+    },
 
-  // Main App Routes
-  {
-    element: <MainLayout />,
-    children: [
-      {
-        path: "/",
-        element: (
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/profile/:userId",
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/posts/:postId",
-        element: (
-          <ProtectedRoute>
-            <PostDetail />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/u/:username",
-        element: (
-          <ProtectedRoute requireAuth={false}>
-            <Profile />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/friends",
-        element: (
-          <ProtectedRoute>
-            <Friends />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/messages",
-        element: (
-          <ProtectedRoute>
-            <Messages />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/notifications",
-        element: (
-          <ProtectedRoute>
-            <Notifications />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/settings",
-        element: (
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/privacy",
-        element: (
-          <ProtectedRoute>
-            <Privacy />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/terms",
-        element: (
-          <ProtectedRoute>
-            <Terms />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/search",
-        element: (
-          <ProtectedRoute>
-            <SearchResults />
-          </ProtectedRoute>
-        ),
-      },
-    ],
-  },
+    // Main App Routes
+    {
+        element: <MainLayout />,
+        children: [
+            {
+                path: "/",
+                element: (
+                    <ProtectedRoute>
+                        <Home />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/profile/:userId",
+                element: (
+                    <ProtectedRoute>
+                        <Profile />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/posts/:postId",
+                element: (
+                    <ProtectedRoute>
+                        <PostDetail />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/u/:username",
+                element: (
+                    <ProtectedRoute requireAuth={false}>
+                        <Profile />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/friends",
+                element: (
+                    <ProtectedRoute>
+                        <Friends />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/messages",
+                element: (
+                    <ProtectedRoute>
+                        <Messages />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/notifications",
+                element: (
+                    <ProtectedRoute>
+                        <Notifications />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/settings",
+                element: (
+                    <ProtectedRoute>
+                        <Settings />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/privacy",
+                element: (
+                    <ProtectedRoute>
+                        <Privacy />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/terms",
+                element: (
+                    <ProtectedRoute>
+                        <Terms />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/search",
+                element: (
+                    <ProtectedRoute>
+                        <SearchResults />
+                    </ProtectedRoute>
+                ),
+            },
+        ],
+    },
 
-  // Admin App Routes
-  {
-    path: "/admin",
-    element: (
-      <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
-        <AdminLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      {
-        path: "dashboard",
-        element: <AdminDashboardPage />,
-      },
-      {
-        path: "users",
-        element: <AdminUsersPage />,
-      },
-      {
-        path: "users/:id",
-        element: <AdminUserDetail />,
-      },
-      {
-        path: "suspects",
-        element: <AdminSuspectPage />,
-      },
-      {
-        path: "posts",
-        element: <AdminPostsPage />,
-      },
-      {
-        path: "ip-blacklist",
-        element: <AdminIpBlacklistPage />,
-      },
-      {
-        path: "",
-        element: <Navigate to="/admin/dashboard" replace />,
-      },
-    ],
-  },
+    // Admin App Routes
+    {
+        path: "/admin",
+        element: (
+            <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
+                <AdminLayout />
+            </ProtectedRoute>
+        ),
+        children: [
+            {
+                path: "dashboard",
+                element: <AdminDashboardPage />,
+            },
+            {
+                path: "users",
+                element: <AdminUsersPage />,
+            },
+            {
+                path: "users/:id",
+                element: <AdminUserDetail />,
+            },
+            {
+                path: "suspects",
+                element: <AdminSuspectPage />,
+            },
+            {
+                path: "posts",
+                element: <AdminPostsPage />,
+            },
+            {
+                path: "ip-blacklist",
+                element: <AdminIpBlacklistPage />,
+            },
+            {
+                path: "media",
+                element: <AdminMediaPage />,
+            },
+            {
+                path: "",
+                element: <Navigate to="/admin/dashboard" replace />,
+            },
+        ],
+    },
 
-  // Catch all - redirect to home
-  {
-    path: "*",
-    element: <Navigate to="/" replace />,
-  },
+    // Catch all - redirect to home
+    {
+        path: "*",
+        element: <Navigate to="/" replace />,
+    },
 ];

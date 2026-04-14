@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Image as ImageIcon, Smile, Send, X, MapPin, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered } from "lucide-react";
+import { Image as ImageIcon, Video, Smile, Send, X, MapPin, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, FileVideo, Loader2 } from "lucide-react";
+import { generateVideoThumbnail } from "../utils/mediaUtils";
 import { useAuth } from "../contexts/AuthContext";
 import { handleApiError } from "../services/api";
 import { postApi } from "../utils/apiClient";
@@ -12,6 +13,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import toast from "react-hot-toast";
 
 interface CreatePostProps {
   onPostCreated: (post: Post) => void;
@@ -72,12 +74,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const [privacy, setPrivacy] = useState<Privacy>(Privacy.PUBLIC);
   const [feeling, setFeeling] = useState<string | undefined>();
   const [images, setImages] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [videos, setVideos] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<{ url: string; thumbnailUrl?: string; isGenerating?: boolean; type: "IMAGE" | "VIDEO" }[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
   const [contentValidationError, setContentValidationError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -87,7 +91,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
         openOnClick: false,
       }),
       Placeholder.configure({
-        placeholder: `Bạn đang nghĩ gì, ${user?.fullName?.split(" ").pop() || ""}?`,
+        placeholder: `What's on your mind, ${user?.fullName?.split(" ").pop() || ""}?`,
       }),
     ],
     content: "",
@@ -98,19 +102,78 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
     },
   }, [user]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "IMAGE" | "VIDEO") => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setImages((prev) => [...prev, ...newFiles]);
 
-      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-      setPreviews((prev) => [...prev, ...newPreviews]);
+      if (type === "VIDEO") {
+        const oversized = newFiles.filter(f => f.size > 100 * 1024 * 1024);
+        if (oversized.length > 0) {
+          setSubmitError("Video size exceeds 100MB limit.");
+          return;
+        }
+        setVideos((prev) => [...prev, ...newFiles]);
+
+        // Create initial previews with loading state
+        const initialPreviews = newFiles.map(file => ({
+          url: URL.createObjectURL(file),
+          type,
+          isGenerating: true
+        }));
+        setPreviews(prev => [...prev, ...initialPreviews]);
+
+        // Generate thumbnails asynchronously
+        for (let i = 0; i < newFiles.length; i++) {
+          try {
+            const thumbUrl = await generateVideoThumbnail(newFiles[i]);
+            setPreviews(prev => {
+              const updated = [...prev];
+              // Find the index of this specific video preview
+              const absoluteIdx = prev.length - newFiles.length + i;
+              if (updated[absoluteIdx]) {
+                updated[absoluteIdx] = { ...updated[absoluteIdx], thumbnailUrl: thumbUrl, isGenerating: false };
+              }
+              return updated;
+            });
+          } catch (error) {
+            console.error("Thumbnail generation failed", error);
+            setPreviews(prev => {
+              const updated = [...prev];
+              const absoluteIdx = prev.length - newFiles.length + i;
+              if (updated[absoluteIdx]) {
+                updated[absoluteIdx] = { ...updated[absoluteIdx], isGenerating: false };
+              }
+              return updated;
+            });
+          }
+        }
+      } else {
+        setImages((prev) => [...prev, ...newFiles]);
+        const newPreviews = newFiles.map((file) => ({
+          url: URL.createObjectURL(file),
+          type
+        }));
+        setPreviews((prev) => [...prev, ...newPreviews]);
+      }
+      setSubmitError(null);
     }
   };
 
-  const removeImage = (index: number) => {
-    URL.revokeObjectURL(previews[index]);
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const removeMedia = (index: number) => {
+    const item = previews[index];
+    URL.revokeObjectURL(item.url);
+
+    if (item.type === "IMAGE") {
+      // Find the index in the original images array
+      // This is a bit tricky if multiple images/videos are interleaved.
+      // Simpler: find the count of items of same type before this index.
+      const sameTypeIndex = previews.slice(0, index).filter(p => p.type === item.type).length;
+      setImages(prev => prev.filter((_, i) => i !== sameTypeIndex));
+    } else {
+      const sameTypeIndex = previews.slice(0, index).filter(p => p.type === item.type).length;
+      setVideos(prev => prev.filter((_, i) => i !== sameTypeIndex));
+    }
+
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -137,7 +200,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
         content: htmlContent,
         privacy,
         feeling,
-        images
+        images,
+        videos
       });
 
       onPostCreated(response as Post);
@@ -147,13 +211,16 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
       setPrivacy(Privacy.PUBLIC);
       setFeeling(undefined);
       setImages([]);
-      previews.forEach(p => URL.revokeObjectURL(p));
+      setVideos([]);
+      previews.forEach(p => URL.revokeObjectURL(p.url));
       setPreviews([]);
       setContentValidationError(null);
       setSubmitError(null);
+      toast.success("Post created successfully!");
     } catch (error) {
       console.error("Failed to create post:", error);
       setSubmitError(handleApiError(error));
+      toast.error(handleApiError(error));
     } finally {
       setIsPosting(false);
     }
@@ -206,12 +273,32 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
 
       {previews.length > 0 && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {previews.map((url, idx) => (
-            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden shadow-sm border border-gray-100">
-              <img src={url} className="w-full h-full object-cover" alt="" />
+          {previews.map((item, idx) => (
+            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden shadow-sm border border-gray-100 bg-gray-50">
+              {item.type === "IMAGE" ? (
+                <img src={item.url} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="w-full h-full relative">
+                  {item.isGenerating ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-400">
+                      <Loader2 className="w-6 h-6 animate-spin mb-1" />
+                      <span className="text-[10px] font-bold">Thumbnail...</span>
+                    </div>
+                  ) : item.thumbnailUrl ? (
+                    <img src={item.thumbnailUrl} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    <video src={item.url} className="w-full h-full object-cover" />
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black/20 backdrop-blur-sm p-2 rounded-full">
+                      <Video size={16} className="text-white" />
+                    </div>
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => removeImage(idx)}
+                onClick={() => removeMedia(idx)}
                 className="absolute top-1.5 right-1.5 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
               >
                 <X size={14} />
@@ -225,11 +312,20 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => imageInputRef.current?.click()}
             className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors group"
           >
             <ImageIcon size={20} className="text-green-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[13.5px] font-bold">Ảnh</span>
+            <span className="text-[13.5px] font-bold">Image</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => videoInputRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors group"
+          >
+            <Video size={20} className="text-red-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[13.5px] font-bold">Video</span>
           </button>
 
           <FeelingSelector selected={feeling} onSelect={setFeeling} />
@@ -237,10 +333,10 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
 
         <button
           onClick={handleSubmit}
-          disabled={(isEmpty && images.length === 0) || isPosting || !!contentValidationError}
+          disabled={(isEmpty && previews.length === 0) || isPosting || !!contentValidationError}
           className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
         >
-          {isPosting ? "Đang đăng..." : "Đăng bài"}
+          {isPosting ? "Censoring..." : "Post"}
           {!isPosting && <Send size={16} />}
         </button>
       </div>
@@ -254,10 +350,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
 
       <input
         type="file"
-        ref={fileInputRef}
-        onChange={handleImageChange}
+        ref={imageInputRef}
+        onChange={(e) => handleMediaChange(e, "IMAGE")}
         multiple
         accept="image/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={videoInputRef}
+        onChange={(e) => handleMediaChange(e, "VIDEO")}
+        multiple
+        accept="video/*"
         className="hidden"
       />
     </div>

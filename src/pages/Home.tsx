@@ -45,11 +45,11 @@ const Home: React.FC = () => {
     try {
       await postApi.deletePost(deletingPostId);
       setPosts(prev => prev.filter(p => p.id !== deletingPostId));
-      toast.success("Xóa bài viết thành công!");
+      toast.success("Delete post successfully!");
       setDeletingPostId(null);
     } catch (error: any) {
       console.error("Failed to delete post:", error);
-      toast.error(error.message || "Xóa bài viết thất bại!");
+      toast.error(error.message || "Delete post failed!");
     } finally {
       setIsDeleting(false);
     }
@@ -92,7 +92,7 @@ const Home: React.FC = () => {
           onClick={fetchPosts}
           className="px-8 py-2.5 bg-white text-blue-600 font-bold text-sm rounded-full shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all border border-blue-50 active:scale-95"
         >
-          Làm mới bảng tin
+          Refresh Feed
         </button>
       </div>
 
