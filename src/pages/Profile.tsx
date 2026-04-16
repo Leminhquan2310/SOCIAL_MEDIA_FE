@@ -34,6 +34,7 @@ import FriendshipButton from "../components/friend/FriendshipButton";
 import MutualFriendsModal from "../components/friend/MutualFriendsModal";
 import { FriendCard } from "../components/friend/FriendCard";
 import { useFriendship } from "../hooks/useFriendship";
+import { useChat } from "../contexts/ChatContext";
 
 const Profile: React.FC = () => {
   const { userId, username } = useParams<{ userId?: string; username?: string }>();
@@ -60,6 +61,7 @@ const Profile: React.FC = () => {
   const [friends, setFriends] = useState<FriendUserDTO[]>([]);
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
   const { status } = useFriendship(profileUser?.id);
+  const { openChatWithUser } = useChat();
 
   const isOwnProfile = String(profileUser?.id) === String(currentUser?.id);
 
@@ -371,7 +373,7 @@ const Profile: React.FC = () => {
                   className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 cursor-pointer active:scale-95"
                 >
                   <Edit3 size={16} />
-                  Sửa hồ sơ
+                  Edit Profile
                 </button>
               ) : (
                 <>
@@ -382,9 +384,12 @@ const Profile: React.FC = () => {
                     />
                   )}
                   {currentUser && (
-                    <button className="flex items-center gap-2 px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all cursor-pointer active:scale-95">
+                    <button
+                      onClick={() => profileUser && openChatWithUser(profileUser)}
+                      className="flex items-center gap-2 px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all cursor-pointer active:scale-95"
+                    >
                       <MessageCircle size={16} />
-                      Nhắn tin
+                      Message
                     </button>
                   )}
                 </>
@@ -399,13 +404,13 @@ const Profile: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="font-black text-gray-900 text-lg">{profileUser.following ?? 0}</span>
               <span className="text-gray-400 font-bold text-[11px] uppercase tracking-wider">
-                Đang theo dõi
+                Following
               </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-black text-gray-900 text-lg">{profileUser.followers ?? 0}</span>
               <span className="text-gray-400 font-bold text-[11px] uppercase tracking-wider">
-                Người theo dõi
+                Followers
               </span>
             </div>
             {profileUser.mutualFriends !== undefined && profileUser.mutualFriends > 0 && (

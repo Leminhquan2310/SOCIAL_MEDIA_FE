@@ -5,6 +5,8 @@ import { LoadingProvider } from "./src/contexts/LoadingContext";
 import LoadingOverlay from "./src/components/LoadingOverlay";
 import { routes } from "./src/config/routes";
 import { Toaster } from "react-hot-toast";
+import { ChatProvider } from "./src/contexts/ChatContext";
+import { SocketProvider } from "./src/contexts/SocketContext";
 
 /**
  * App Content Component
@@ -50,8 +52,12 @@ const App: React.FC = () => {
               },
             }}
           />
-          <LoadingOverlay />
-          <AppContent />
+          <SocketProvider>
+            <ChatProvider>
+              <LoadingOverlay />
+              <AppContent />
+            </ChatProvider>
+          </SocketProvider>
         </AuthProvider>
       </LoadingProvider>
     </BrowserRouter>

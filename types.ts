@@ -309,3 +309,46 @@ export interface AdminPostResponseDto {
   createdAt: string;
 }
 
+// ============================================================================
+// Chat Types
+// ============================================================================
+
+export interface MessageDto {
+  id: number;
+  conversationId: number;
+  senderId: number;
+  senderName: string;
+  content: string;
+  status: string;
+  createdAt: string;
+  seenAt?: string;
+}
+
+export enum ConversationType {
+  PRIVATE = "PRIVATE",
+  GROUP = "GROUP"
+}
+
+export interface ConversationResponseDto {
+  id: number;
+  type?: ConversationType;
+  otherUserId: number | null;
+  otherUserFullName: string;
+  otherUserAvatar?: string;
+  lastMessage: string;
+  lastSenderId: number;
+  lastMessageAt: string;
+  unreadCount: number;
+}
+
+export interface ChatRequest {
+  senderId: number;
+  receiverId: number;
+  content: string;
+}
+
+export interface MessageStatus {
+  SENT: "SENT";
+  DELIVERED: "DELIVERED";
+  SEEN: "SEEN";
+}
