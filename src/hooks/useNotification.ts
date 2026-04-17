@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Client, IMessage } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
 import { Notification, NotificationType } from "../../types";
 import { useAuth } from "../contexts/AuthContext";
 import { notificationApi } from "../utils/apiClient";
-import { API_CONFIG } from "../config/apiConfig";
 import { toast } from "react-hot-toast";
+
+import { useSocket } from "../contexts/SocketContext";
+import { IMessage } from "@stomp/stompjs";
 
 export function useNotification() {
   const { user, isAuthenticated, token, logout } = useAuth();
+  const { connected, subscribe } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const stompClientRef = useRef<Client | null>(null);
 
   // Fetch initial data notifycation
   const fetchInitialDataNotify = useCallback(async () => {
@@ -57,7 +57,7 @@ export function useNotification() {
 
       // Show toast if not silent
       if (!newNotif.isSilent) {
-        const actorName = newNotif.actor.fullName || newNotif.actor.username;
+        const actorName = newNotif.actor?.fullName || newNotif.actor?.username;
         const countText = newNotif.actorCount && newNotif.actorCount > 1
           ? ` và ${newNotif.actorCount - 1} người khác`
           : "";
@@ -73,60 +73,39 @@ export function useNotification() {
 
   const getNotificationText = (notif: Notification) => {
     switch (notif.type) {
-      case NotificationType.FRIEND_REQUEST: return "đã gửi lời mời kết bạn";
-      case NotificationType.FRIEND_ACCEPT: return "đã chấp nhận lời mời kết bạn";
-      case NotificationType.LIKE_POST: return "đã thích bài viết của bạn";
-      case NotificationType.LIKE_COMMENT: return "đã thích bình luận của bạn";
-      case NotificationType.COMMENT_POST: return "đã bình luận bài viết của bạn";
-      case NotificationType.REPLY_COMMENT: return "đã trả lời bình luận của bạn";
-      default: return "có thông báo mới dành cho bạn";
+      case NotificationType.FRIEND_REQUEST: return "has sent you a friend request";
+      case NotificationType.FRIEND_ACCEPT: return "has accepted your friend request";
+      case NotificationType.LIKE_POST: return "has liked your post";
+      case NotificationType.LIKE_COMMENT: return "has liked your comment";
+      case NotificationType.COMMENT_POST: return "has commented on your post";
+      case NotificationType.REPLY_COMMENT: return "has replied to your comment";
+      default: return "has a new notification for you";
     }
   };
 
-  // Setup WebSocket connection
+  // Setup WebSocket connection via shared SocketContext
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !user || !connected) return;
 
-    const socket = new SockJS(API_CONFIG.WS_URL);
-    const client = new Client({
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-      webSocketFactory: () => socket,
-      debug: (msg) => {
-        if (import.meta.env.DEV) console.log("STOMP:", msg);
-      },
-      reconnectDelay: 5000,
-      onConnect: () => {
-        if (import.meta.env.DEV) console.log("Connected to WebSocket");
-        // Subscribe to private queue
-        client.subscribe(`/user/queue/notifications`, handleMessage);
-
-        // Subscribe to user status changes for BANNED event
-        client.subscribe(`/topic/user-status-${user.id}`, (message) => {
-          if (message.body === "BANNED") {
-            toast.error("Your account has been banned by the system, you can't access it anymore!", { duration: 6000, position: "top-center" });
-            if (logout) {
-              logout();
-              window.location.href = "/login";
-            }
-          }
-        });
-      },
-      onStompError: (frame) => {
-        console.error("STOMP error", frame);
-      },
+    const notifSub = subscribe(`/user/queue/notifications`, (message) => {
+      handleMessage(message as any);
     });
 
-    client.activate();
-    stompClientRef.current = client;
+    const statusSub = subscribe(`/topic/user-status-${user.id}`, (message) => {
+      if (message.body === "BANNED") {
+        toast.error("Your account has been banned by the system, you can't access it anymore!", { duration: 6000, position: "top-center" });
+        if (logout) {
+          logout();
+          window.location.href = "/login";
+        }
+      }
+    });
 
     return () => {
-      if (stompClientRef.current) {
-        stompClientRef.current.deactivate();
-      }
+      notifSub?.unsubscribe();
+      statusSub?.unsubscribe();
     };
-  }, [isAuthenticated, user, handleMessage]);
+  }, [isAuthenticated, user, connected, subscribe, handleMessage, logout]);
 
   const markAsRead = async (id: string | number) => {
     try {

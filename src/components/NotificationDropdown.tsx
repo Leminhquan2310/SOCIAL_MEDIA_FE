@@ -30,7 +30,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
     // 2. Determine target URL
     if (n.type === NotificationType.FRIEND_REQUEST || n.type === NotificationType.FRIEND_ACCEPT) {
-      const url = `/profile/${n.actor.id}`;
+      const url = `/u/${n.actor.username}`;
       navigate(url);
     } else {
       const targetPostId = n.targetId || n.referenceId;
@@ -46,7 +46,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
       let url = `/posts/${targetPostId}`;
       const queryParams = new URLSearchParams();
-      
+
       if (isCommentRelated && n.type !== NotificationType.COMMENT_POST) {
         queryParams.set("commentId", String(n.referenceId));
       } else if (n.type === NotificationType.COMMENT_POST) {
@@ -64,7 +64,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       if (queryString) {
         url += `?${queryString}`;
       }
-      
+
       console.log("Navigating to:", url);
       navigate(url);
     }
@@ -78,14 +78,14 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     try {
       if (action === "accept") {
         await friendApi.acceptRequest(String(n.actor.id));
-        toast.success(`Đã chấp nhận lời mời từ ${n.actor.fullName}`);
+        toast.success(`Accept friend request from ${n.actor.fullName}`);
       } else {
         await friendApi.declineRequest(String(n.actor.id));
-        toast.success(`Đã từ chối lời mời từ ${n.actor.fullName}`);
+        toast.success(`Decline friend request from ${n.actor.fullName}`);
       }
       onMarkAsRead(n.id);
     } catch (error) {
-      toast.error("Thao tác thất bại");
+      toast.error("Action failed");
     } finally {
       refresh();
     }
@@ -94,19 +94,19 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const getNotificationContent = (n: Notification) => {
     switch (n.type) {
       case NotificationType.FRIEND_REQUEST:
-        return "đã gửi cho bạn một lời mời kết bạn.";
+        return "has sent you a friend request.";
       case NotificationType.FRIEND_ACCEPT:
-        return "đã chấp nhận lời mời kết bạn của bạn.";
+        return "has accepted your friend request.";
       case NotificationType.LIKE_POST:
-        return "đã thích bài viết của bạn.";
+        return "has liked your post.";
       case NotificationType.LIKE_COMMENT:
-        return "đã thích bình luận của bạn.";
+        return "has liked your comment.";
       case NotificationType.COMMENT_POST:
-        return "đã bình luận về bài viết của bạn.";
+        return "has commented on your post.";
       case NotificationType.REPLY_COMMENT:
-        return "đã trả lời bình luận của bạn.";
+        return "has replied to your comment.";
       default:
-        return "có tương tác mới với bạn.";
+        return "has new interaction with you.";
     }
   };
 
@@ -129,12 +129,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   return (
     <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-slide-up">
       <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-white sticky top-0">
-        <h3 className="font-bold text-gray-900">Thông báo</h3>
+        <h3 className="font-bold text-gray-900">Notifications</h3>
         <button
           onClick={onMarkAllAsRead}
           className="text-xs text-blue-600 font-semibold hover:underline"
         >
-          Đánh dấu tất cả đã đọc
+          Mark all as read
         </button>
       </div>
 
@@ -142,7 +142,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         {notifications.length === 0 ? (
           <div className="p-10 text-center text-gray-400">
             <BellOff size={40} className="mx-auto mb-2 opacity-20" />
-            <p className="text-sm">Bạn chưa có thông báo nào</p>
+            <p className="text-sm">You have no notifications</p>
           </div>
         ) : (
           notifications.map((n) => (
@@ -187,13 +187,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                       onClick={(e) => handleFriendAction(e, n, "accept")}
                       className="flex-1 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 hover:bg-blue-700 transition-colors"
                     >
-                      <Check size={14} /> Chấp nhận
+                      <Check size={14} /> Accept
                     </button>
                     <button
                       onClick={(e) => handleFriendAction(e, n, "decline")}
                       className="flex-1 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1 hover:bg-gray-200 transition-colors"
                     >
-                      <X size={14} /> Từ chối
+                      <X size={14} /> Decline
                     </button>
                   </div>
                 )}
@@ -211,7 +211,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         onClick={onClose}
         className="block w-full text-center py-3 bg-gray-50 text-sm font-bold text-blue-600 hover:bg-gray-100 transition-colors border-t border-gray-50"
       >
-        Xem tất cả thông báo
+        View all notifications
       </Link>
     </div>
   );

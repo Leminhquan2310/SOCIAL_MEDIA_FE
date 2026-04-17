@@ -5,9 +5,11 @@ import toast from "react-hot-toast";
 import { friendApi } from "../utils/apiClient";
 import { useAuth } from "../contexts/AuthContext";
 import { FriendSuggestionCard } from "../components/friend/FriendSuggestionCard";
+import { useChat } from "../contexts/ChatContext";
 
 const Friends: React.FC = () => {
   const { user } = useAuth();
+  const { openChat } = useChat();
   const [activeTab, setActiveTab] = useState<"all" | "requests" | "suggestions">("all");
   const [friends, setFriends] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
@@ -96,6 +98,10 @@ const Friends: React.FC = () => {
     }
   };
 
+  const handleOpenChat = (id: number) => {
+    openChat(id, false);
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[600px] animate-fade-in">
       <div className="p-6 border-b border-gray-100">
@@ -177,7 +183,9 @@ const Friends: React.FC = () => {
                         </div>
                       </Link>
                       <div className="flex gap-2">
-                        <button className="p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors">
+                        <button
+                          onClick={() => handleOpenChat(friend.id)}
+                          className="p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors">
                           <MessageSquare size={18} />
                         </button>
                         <button

@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiDelete } from "./api";
 import { API_CONFIG } from "../config/apiConfig";
-import { ApiResponse, FriendStatusDTO } from "../../types";
+import { ApiResponse, FriendStatusDTO, FriendUserDTO } from "../../types";
 
 /**
  * Friend Utilities

@@ -78,13 +78,13 @@ export const API_CONFIG = {
       MUTUAL_FRIENDS: (id: string) => `/friends/mutual/${id}`,
     },
 
-    // Message endpoints
-    MESSAGE: {
-      LIST: "/messages",
-      GET_CONVERSATION: (id: string) => `/messages/conversation/${id}`,
-      SEND: "/messages/send",
-      DELETE: (id: string) => `/messages/${id}`,
-      MARK_READ: "/messages/mark-read",
+    // Chat endpoints
+    CHAT: {
+      CONVERSATIONS: "/chat/conversations",
+      MESSAGES: (id: string) => `/chat/messages/${id}`,
+      SEEN: (id: string) => `/chat/seen/${id}`,
+      UNREAD_COUNT: "/chat/unread-count",
+      GET_OR_CREATE: (receiverId: string) => `/chat/conversations/user/${receiverId}`,
     },
 
     // Notification endpoints

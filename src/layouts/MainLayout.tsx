@@ -18,7 +18,11 @@ import {
   Heart,
   MessageCircle,
 } from "lucide-react";
-import { SUGGESTED_FRIENDS, ONLINE_FRIENDS } from "../../constants";
+import { useChat } from "../contexts/ChatContext";
+import ChatDropdown from "../components/chat/ChatDropdown";
+import ChatWindow from "../components/chat/ChatWindow";
+import { friendApi } from "../services/friendApi";
+import { FriendUserDTO } from "../../types";
 /**
  * Main Layout Component
  * Wraps authenticated pages with header, sidebar, and suggested friends
@@ -28,11 +32,60 @@ const MainLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const notifRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   const { notifications, unreadCount, markAsRead, markAllAsRead, refreshNotify, refreshUnreadCount } = useNotification();
+  const { totalUnreadCount, refreshData } = useChat();
+
+  const [suggestedFriends, setSuggestedFriends] = useState<any[]>([]);
+  const [onlineFriends, setOnlineFriends] = useState<User[]>([]);
+  const [sentRequests, setSentRequests] = useState<Set<string | number>>(new Set());
+
+  useEffect(() => {
+    if (user) {
+      const fetchFriendsData = async () => {
+        try {
+          const [suggestionsRes, friendsRes] = await Promise.all<any>([
+            friendApi.getSuggestions(),
+            friendApi.getFriends(user.username)
+          ]);
+
+          if (suggestionsRes?.data?.content) {
+            setSuggestedFriends(suggestionsRes.data.content.slice(0, 5));
+          } else if (suggestionsRes?.data && Array.isArray(suggestionsRes.data)) {
+            setSuggestedFriends(suggestionsRes.data.slice(0, 5));
+          }
+
+          if (friendsRes?.data?.content) {
+            const friendsList = friendsRes.data.content as User[];
+            setOnlineFriends(friendsList.filter((f) => f.isOnline));
+          } else if (friendsRes?.data && Array.isArray(friendsRes.data)) {
+            const friendsList = friendsRes.data as User[];
+            setOnlineFriends(friendsList.filter((f) => f.isOnline));
+          }
+        } catch (error) {
+          console.error("Failed to fetch friends data:", error);
+        }
+      };
+
+      fetchFriendsData();
+    }
+  }, [user]);
+
+  const handleSendFriendRequest = async (e: React.MouseEvent, targetUserId: string | number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await friendApi.sendRequest(String(targetUserId));
+      setSentRequests(prev => new Set(prev).add(targetUserId));
+    } catch (error) {
+      console.error("Failed to send friend request:", error);
+    }
+  };
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -51,6 +104,23 @@ const MainLayout: React.FC = () => {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isNotifOpen]);
+
+  // Close chat dropdown when clicking outside
+  useEffect(() => {
+    if (isChatOpen) {
+      refreshData();
+    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (chatRef.current && !chatRef.current.contains(event.target as Node)) {
+        setIsChatOpen(false);
+      }
+    };
+
+    if (isChatOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isChatOpen]);
 
   const handleLogout = () => {
     logout();
@@ -129,13 +199,26 @@ const MainLayout: React.FC = () => {
                   )}
                 </div>
 
-                <Link
-                  to="/messages"
-                  className="hidden sm:block p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all"
-                  title="Messages"
-                >
-                  <MessageSquare size={20} />
-                </Link>
+                <div className="relative" ref={chatRef}>
+                  <button
+                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    className={`relative p-2 rounded-full transition-all ${isChatOpen ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    title="Messages"
+                  >
+                    <MessageSquare size={20} />
+                    {totalUnreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border border-white font-bold">
+                        {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Chat Dropdown */}
+                  {isChatOpen && (
+                    <ChatDropdown onClose={() => setIsChatOpen(false)} />
+                  )}
+                </div>
                 <div className="h-8 w-[1px] bg-gray-200 hidden sm:block"></div>
                 <Link
                   to={`/u/${user?.username}`}
@@ -203,42 +286,47 @@ const MainLayout: React.FC = () => {
           <aside className="lg:col-span-3 hidden lg:block space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-3.5 border border-gray-100 top-24">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h3 className="font-bold text-gray-800 text-sm">Gợi ý cho bạn</h3>
+                <h3 className="font-bold text-gray-800 text-sm">Suggested Friends</h3>
                 <Link to="/friends" className="text-[11px] font-bold text-blue-600 hover:underline">
-                  Xem tất cả
+                  See all
                 </Link>
               </div>
               <div className="space-y-3.5">
-                {SUGGESTED_FRIENDS.map((friend) => (
+                {suggestedFriends.map((friend) => (
                   <div key={friend.id} className="flex items-center justify-between group px-1">
                     <Link
                       to={`/u/${friend.username}`}
                       className="flex items-center gap-2.5 hover:opacity-80 transition-opacity min-w-0"
                     >
                       <img
-                        src={friend.avatar}
+                        src={friend.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.fullName)}&background=random`}
                         className="w-8 h-8 rounded-full object-cover ring-1 ring-gray-50 shadow-sm"
-                        alt=""
+                        alt={friend.fullName}
                       />
                       <div className="overflow-hidden">
-                        <p className="font-bold text-[13px] truncate">{friend.name}</p>
+                        <p className="font-bold text-[13px] truncate">{friend.fullName}</p>
                         <p className="text-[10px] text-gray-400">@{friend.username}</p>
                       </div>
                     </Link>
-                    <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95 shrink-0">
-                      <UserPlus size={16} />
-                    </button>
+                    {!sentRequests.has(friend.id) && (
+                      <button
+                        onClick={(e) => handleSendFriendRequest(e, friend.id)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95 shrink-0"
+                      >
+                        <UserPlus size={16} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
 
               <div className="mt-8 border-t border-gray-50 pt-4">
                 <div className="flex items-center justify-between mb-4 px-1">
-                  <h3 className="font-bold text-gray-800 text-sm">Bạn bè trực tuyến</h3>
+                  <h3 className="font-bold text-gray-800 text-sm">Online Friends</h3>
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
                 </div>
                 <div className="space-y-3">
-                  {ONLINE_FRIENDS.map((friend) => (
+                  {onlineFriends.map((friend) => (
                     <Link
                       to={`/u/${friend.username}`}
                       key={friend.id}
@@ -246,24 +334,27 @@ const MainLayout: React.FC = () => {
                     >
                       <div>
                         <img
-                          src={friend.avatar}
+                          src={friend.avatarUrl || friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.fullName || friend.name || '')}&background=random`}
                           className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-gray-50"
-                          alt=""
+                          alt={friend.fullName || friend.name}
                         />
                         <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
                       </div>
                       <div className="flex-1 overflow-hidden">
-                        <p className="font-bold text-[13px] truncate">{friend.name}</p>
+                        <p className="font-bold text-[13px] truncate">{friend.fullName || friend.name}</p>
                         <p className="text-[9px] text-green-600 font-bold uppercase tracking-wider">Online</p>
                       </div>
                     </Link>
                   ))}
+                  {onlineFriends.length === 0 && (
+                    <p className="text-xs text-gray-500 px-1 italic">Do not have any online friends</p>
+                  )}
                 </div>
               </div>
 
               <div className="mt-8 px-1 text-[10px] text-gray-400 font-medium space-x-2 border-t border-gray-50 pt-4">
-                <Link to="/privacy" className="hover:underline">Bảo mật</Link>
-                <Link to="/terms" className="hover:underline">Điều khoản</Link>
+                <Link to="/privacy" className="hover:underline">Privacy</Link>
+                <Link to="/terms" className="hover:underline">Terms</Link>
                 <span>© 2024 NexusSocial</span>
               </div>
             </div>
@@ -306,6 +397,9 @@ const MainLayout: React.FC = () => {
         </div>,
         document.body
       )}
+
+      {/* Real-time Floating Chat Window */}
+      <ChatWindow />
     </div>
   );
 };
