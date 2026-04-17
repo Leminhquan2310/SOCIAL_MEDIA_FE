@@ -11,18 +11,31 @@ interface ChatDropdownProps {
     onClose: () => void;
 }
 
+/** Helper to remove Vietnamese diacritics */
+const removeAccents = (str: string) => {
+    if (!str) return "";
+    return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D');
+};
+
 /** Highlights the matched portion of text in bold */
 const HighlightText: React.FC<{ text: string; query: string }> = ({ text, query }) => {
     if (!query.trim()) return <>{text}</>;
 
-    const index = text.toLowerCase().indexOf(query.toLowerCase());
+    const normalizedText = removeAccents(text.toLowerCase());
+    const normalizedQuery = removeAccents(query.toLowerCase().trim());
+
+    const index = normalizedText.indexOf(normalizedQuery);
     if (index === -1) return <>{text}</>;
 
     return (
         <>
             {text.slice(0, index)}
-            <span className="font-black text-blue-600">{text.slice(index, index + query.length)}</span>
-            {text.slice(index + query.length)}
+            <span className="font-black text-blue-600">{text.slice(index, index + normalizedQuery.length)}</span>
+            {text.slice(index + normalizedQuery.length)}
         </>
     );
 };
@@ -55,7 +68,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
         fetchFriends();
     }, [user?.username]);
 
-    const query = searchQuery.toLowerCase().trim();
+    const query = removeAccents(searchQuery.toLowerCase().trim());
     const isSearching = query.length > 0;
 
     /**
@@ -76,7 +89,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
      */
     const filteredFriends = useMemo(() =>
         friends.filter(friend =>
-            friend.fullName.toLowerCase().includes(query)
+            removeAccents(friend.fullName.toLowerCase()).includes(query)
         ),
         [friends, query]
     );
@@ -131,7 +144,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
                     </h4>
                     <div className="flex items-center gap-1 mt-0.5">
                         <p className={`text-[13px] truncate flex-1 ${isUnread ? "text-gray-900 font-black" : "text-gray-500 font-medium"}`}>
-                            {conv.lastSenderId === user?.id ? "Bạn: " : ""}
+                            {conv.lastSenderId === user?.id ? "You: " : ""}
                             {conv.lastMessage}
                         </p>
                         <span className="text-[11px] text-gray-400 whitespace-nowrap shrink-0">
@@ -193,7 +206,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
                         </div>
                     ) : (
                         // No conversation yet — invite to start one
-                        <p className="text-[13px] text-gray-400 font-medium mt-0.5">Nhắn tin</p>
+                        <p className="text-[13px] text-gray-400 font-medium mt-0.5">Chat with this user</p>
                     )}
                 </div>
 
@@ -240,7 +253,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Tìm kiếm bạn bè để nhắn tin"
+                        placeholder="Search..."
                         className="w-full bg-gray-100 border-none rounded-full focus:outline-none py-2 pl-10 pr-8 text-sm focus:ring-0 placeholder:text-gray-500"
                         autoComplete="off"
                     />
@@ -266,8 +279,8 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
                         {!loadingFriends && filteredFriends.length === 0 && (
                             <div className="p-10 text-center text-gray-400">
                                 <Search size={36} className="mx-auto mb-2 opacity-20" />
-                                <p className="text-sm font-semibold">Không tìm thấy bạn bè nào</p>
-                                <p className="text-xs mt-1 text-gray-300">Thử tìm với tên khác</p>
+                                <p className="text-sm font-semibold">No friends found</p>
+                                <p className="text-xs mt-1 text-gray-300">Try searching with a different name</p>
                             </div>
                         )}
 
@@ -284,8 +297,8 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
                     conversations.length === 0 ? (
                         <div className="p-10 text-center text-gray-400">
                             <MessageCircle size={40} className="mx-auto mb-2 opacity-20" />
-                            <p className="text-sm font-medium">Bạn chưa có cuộc trò chuyện nào</p>
-                            <p className="text-xs mt-1 text-gray-300">Tìm kiếm bạn bè để bắt đầu nhắn tin</p>
+                            <p className="text-sm font-medium">You have no conversations</p>
+                            <p className="text-xs mt-1 text-gray-300">Search for friends to start chatting</p>
                         </div>
                     ) : (
                         <div className="py-1">
@@ -293,12 +306,6 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({ onClose }) => {
                         </div>
                     )
                 )}
-            </div>
-
-            <div className="p-3 text-center border-t border-gray-50">
-                <button className="text-[14px] text-blue-600 font-black hover:bg-blue-50 w-full py-2 rounded-lg transition-colors">
-                    Xem tất cả trong Messenger
-                </button>
             </div>
         </div>
     );

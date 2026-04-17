@@ -150,7 +150,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setOpenChats(prev => {
             const session = prev.find(c => c.key === key);
             if (!session) return prev;
-            
+
             // Mark as seen when opening a minimized bubble
             if (session.conversationId) {
                 markAsSeen(session.conversationId);
@@ -163,7 +163,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // ── Incoming message handler ──────────────────────────────────────────────
 
-    const handleIncomingMessage = useCallback((msg: MessageDto) => {
+    const handleIncomingMessage = useCallback((payload: any) => {
+        // Check if this is a status update or a new message
+        if (payload.type === 'CHAT_STATUS') {
+            const { conversationId, userId, status } = payload;
+            
+            // Update open sessions: Mark matching messages as SEEN
+            setOpenChats(prev => prev.map(session => {
+                if (session.conversationId !== conversationId) return session;
+                
+                return {
+                    ...session,
+                    messages: session.messages.map(m => 
+                        (m.senderId !== userId && m.status !== 'SEEN') 
+                        ? { ...m, status: 'SEEN' } 
+                        : m
+                    )
+                };
+            }));
+            
+            // Also update conversation list last message status if needed
+            return;
+        }
+
+        const msg: MessageDto = payload;
         const key = `conv-${msg.conversationId}`;
 
         // Show preview toast if message is from another person and their window is not visible
@@ -202,11 +225,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (idx === -1) return prev;
 
             const session = prev[idx];
-            const isVisible = !session.isMinimized;
-
-            // Auto mark as seen if the window is currently open and visible
-            if (isVisible && !isFromMe) {
-                chatApi.markAsSeen(msg.conversationId).catch(() => { });
+            // Removed automatic markAsSeen here to prioritize explicit interaction-based seen logic (focus/click)
+            
+            let updatedMessages = [...session.messages];
+            
+            if (isFromMe) {
+                // Try to find matching pending message to replace
+                const pendingIdx = updatedMessages.findIndex(m => 
+                    m.status === 'PENDING' && m.content === msg.content
+                );
+                if (pendingIdx !== -1) {
+                    updatedMessages[pendingIdx] = msg;
+                } else {
+                    updatedMessages.push(msg);
+                }
+            } else {
+                updatedMessages.push(msg);
             }
 
             const updated = prev.map((c, i) =>
@@ -214,7 +248,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     ...c,
                     key,                          // upgrade temp key if needed
                     conversationId: msg.conversationId,
-                    messages: [...c.messages, msg],
+                    messages: updatedMessages,
                 }
             );
             return updated;
@@ -248,10 +282,69 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     }, [user?.id, openChat]);
 
-    const sendMessage = useCallback((receiverId: number, content: string, _sessionKey: string) => {
-        if (socketConnected && user) {
-            publish('/app/chat.send', { senderId: user.id, receiverId, content });
+    const sendMessage = useCallback(async (receiverId: number, content: string, sessionKey: string) => {
+        if (!socketConnected || !user) return;
+
+        let targetConversationId: number | null = null;
+        let currentKey = sessionKey;
+
+        // Try to find the session to check if it has a conversationId
+        const session = openChatsRef.current.find(c => c.key === sessionKey);
+
+        if (session && session.conversationId === null) {
+            try {
+                // First time messaging: Get or Create conversation via REST
+                const res = await chatApi.getOrCreateConversation(receiverId);
+                const convData = res; // res is already the ConversationResponseDto from chatApi
+
+                targetConversationId = convData.id;
+                const newKey = `conv-${convData.id}`;
+                currentKey = newKey;
+
+                // Sync the global conversations list so ChatWindow can find the info
+                setConversations(prev => {
+                    if (prev.some(c => c.id === convData.id)) return prev;
+                    return [convData, ...prev];
+                });
+
+                // Update the open session with the new ID and official key
+                setOpenChats(prev => prev.map(c =>
+                    c.key === sessionKey
+                        ? { ...c, conversationId: convData.id, key: newKey, tempUser: null }
+                        : c
+                ));
+            } catch (error) {
+                console.error('Failed to initialize conversation:', error);
+                return;
+            }
+        } else {
+            targetConversationId = session?.conversationId || null;
         }
+
+        // 1. Add local pending message for immediate feedback
+        const tempMsg: MessageDto = {
+            id: Date.now(), // temporary ID
+            conversationId: targetConversationId || 0,
+            senderId: user.id,
+            senderName: user.fullName || '',
+            content,
+            status: 'PENDING',
+            createdAt: new Date().toISOString()
+        };
+
+        setOpenChats(prev => prev.map(c => 
+            c.key === currentKey 
+                ? { ...c, messages: [...c.messages, tempMsg] } 
+                : c
+        ));
+
+        // 2. Now send the actual message via WebSocket
+        publish('/app/chat.send', {
+            senderId: user.id,
+            receiverId,
+            content,
+            conversationId: targetConversationId
+        });
     }, [socketConnected, user, publish]);
 
     // ── WebSocket subscriptions ───────────────────────────────────────────────

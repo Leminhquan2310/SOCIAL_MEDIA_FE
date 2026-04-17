@@ -32,5 +32,11 @@ export const chatApi = {
             withCredentials: true
         });
         return response.data;
+    },
+    getOrCreateConversation: async (receiverId: number) => {
+        const response = await apiPost<ApiResponse<ConversationResponseDto>>(`${API_CONFIG.ENDPOINTS.CHAT.GET_OR_CREATE(receiverId.toString())}`, {}, {
+            withCredentials: true
+        });
+        return response.data;
     }
 };

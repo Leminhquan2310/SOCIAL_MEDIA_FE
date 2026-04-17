@@ -71,14 +71,6 @@ export const routes: RouteObject[] = [
                 ),
             },
             {
-                path: "/profile/:userId",
-                element: (
-                    <ProtectedRoute>
-                        <Profile />
-                    </ProtectedRoute>
-                ),
-            },
-            {
                 path: "/posts/:postId",
                 element: (
                     <ProtectedRoute>

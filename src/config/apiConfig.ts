@@ -84,6 +84,7 @@ export const API_CONFIG = {
       MESSAGES: (id: string) => `/chat/messages/${id}`,
       SEEN: (id: string) => `/chat/seen/${id}`,
       UNREAD_COUNT: "/chat/unread-count",
+      GET_OR_CREATE: (receiverId: string) => `/chat/conversations/user/${receiverId}`,
     },
 
     // Notification endpoints

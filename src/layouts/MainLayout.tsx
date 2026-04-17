@@ -43,6 +43,7 @@ const MainLayout: React.FC = () => {
 
   const [suggestedFriends, setSuggestedFriends] = useState<any[]>([]);
   const [onlineFriends, setOnlineFriends] = useState<User[]>([]);
+  const [sentRequests, setSentRequests] = useState<Set<string | number>>(new Set());
 
   useEffect(() => {
     if (user) {
@@ -74,6 +75,17 @@ const MainLayout: React.FC = () => {
       fetchFriendsData();
     }
   }, [user]);
+
+  const handleSendFriendRequest = async (e: React.MouseEvent, targetUserId: string | number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await friendApi.sendRequest(String(targetUserId));
+      setSentRequests(prev => new Set(prev).add(targetUserId));
+    } catch (error) {
+      console.error("Failed to send friend request:", error);
+    }
+  };
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -296,9 +308,14 @@ const MainLayout: React.FC = () => {
                         <p className="text-[10px] text-gray-400">@{friend.username}</p>
                       </div>
                     </Link>
-                    <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95 shrink-0">
-                      <UserPlus size={16} />
-                    </button>
+                    {!sentRequests.has(friend.id) && (
+                      <button
+                        onClick={(e) => handleSendFriendRequest(e, friend.id)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group-hover:bg-blue-100 active:scale-95 shrink-0"
+                      >
+                        <UserPlus size={16} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

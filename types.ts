@@ -334,6 +334,7 @@ export interface ConversationResponseDto {
   type?: ConversationType;
   otherUserId: number | null;
   otherUserFullName: string;
+  otherUserUsername: string;
   otherUserAvatar?: string;
   lastMessage: string;
   lastSenderId: number;

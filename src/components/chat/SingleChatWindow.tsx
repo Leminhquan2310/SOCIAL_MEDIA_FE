@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Smile, Paperclip, Phone, Video, Minus } from 'lucide-react';
+import { X, Send, Smile, Paperclip, Phone, Video, Minus, Check, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useAuth } from '../../contexts/AuthContext';
-import { OpenChatSession } from '../../contexts/ChatContext';
+import { OpenChatSession, useChat } from '../../contexts/ChatContext';
 import { ConversationResponseDto, MessageDto } from '../../../types';
 
 interface SingleChatWindowProps {
@@ -29,6 +29,7 @@ const SingleChatWindow: React.FC<SingleChatWindowProps> = ({
     onSend,
 }) => {
     const { user } = useAuth();
+    const { markAsSeen } = useChat();
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -55,9 +56,21 @@ const SingleChatWindow: React.FC<SingleChatWindowProps> = ({
         }
     };
 
+    const unreadCount = conversation?.unreadCount ?? 0;
+    const hasUnread = unreadCount > 0 && conversation?.lastSenderId !== user?.id;
+
+    const handleInputFocus = () => {
+        if (hasUnread && conversation?.id) {
+            markAsSeen(conversation.id);
+        }
+    };
+
     return (
         <div
-            className="fixed bottom-5 w-[344px] h-[450px] bg-white rounded-t-xl shadow-2xl flex flex-col z-[60] border border-gray-100 animate-slide-up"
+            className={`fixed bottom-5 w-[344px] h-[450px] bg-white rounded-t-xl shadow-2xl flex flex-col z-[60] border transition-all duration-300 animate-slide-up ${hasUnread
+                ? 'border-blue-400 ring-2 ring-blue-100 shadow-[0_8px_30px_rgb(0,0,0,0.12),0_0_15px_rgba(59,130,246,0.3)]'
+                : 'border-gray-100'
+                }`}
             style={{ right: rightOffset }}
         >
             {/* ── Header ──────────────────────────────────────────────────── */}
@@ -128,6 +141,10 @@ const SingleChatWindow: React.FC<SingleChatWindowProps> = ({
                     const showTime = idx === 0 ||
                         new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() > 300_000;
 
+                    // Find the index of the last message sent by the user to only show status there
+                    const lastSentIdx = [...session.messages].reverse().findIndex(m => m.senderId === user?.id);
+                    const isLastSent = lastSentIdx !== -1 && idx === (session.messages.length - 1 - lastSentIdx);
+
                     return (
                         <div key={msg.id} className="flex flex-col">
                             {showTime && (
@@ -135,15 +152,37 @@ const SingleChatWindow: React.FC<SingleChatWindowProps> = ({
                                     {format(new Date(msg.createdAt), 'HH:mm, dd/MM', { locale: vi })}
                                 </div>
                             )}
-                            <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                                 <div
-                                    className={`max-w-[75%] px-3 py-2 rounded-2xl text-[14px] leading-snug ${isMe
-                                        ? 'bg-blue-600 text-white rounded-br-sm shadow-sm'
+                                    className={`max-w-[85%] px-3 py-2 rounded-2xl text-[14px] leading-snug shadow-sm ${isMe
+                                        ? 'bg-blue-600 text-white rounded-br-sm'
                                         : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                                         }`}
                                 >
                                     {msg.content}
                                 </div>
+
+                                { /* Status indicators: Always show PENDING, but only show SENT/SEEN for the last message */}
+                                {isMe && (
+                                    <div className="flex items-center mt-1 pr-1">
+                                        {msg.status === 'PENDING' && (
+                                            <Clock size={10} className="text-gray-300 animate-pulse" />
+                                        )}
+                                        {isLastSent && msg.status === 'SENT' && (
+                                            <Check size={12} className="text-gray-400" />
+                                        )}
+                                        {isLastSent && msg.status === 'SEEN' && idx === session.messages.length - 1 && (
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[9px] text-gray-400 font-medium">Seen</span>
+                                                <img
+                                                    src={avatarSrc}
+                                                    className="w-3 h-3 rounded-full object-cover grayscale-[0.5]"
+                                                    alt="Seen"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );
@@ -166,6 +205,7 @@ const SingleChatWindow: React.FC<SingleChatWindowProps> = ({
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
+                            onFocus={handleInputFocus}
                             placeholder="Aa"
                             className="bg-transparent border-none focus:outline-none focus:ring-0 py-2 flex-1 text-sm text-gray-800"
                         />
