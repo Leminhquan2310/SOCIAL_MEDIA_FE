@@ -1,0 +1,220 @@
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Notification, NotificationType } from "../../types";
+import { Heart, MessageCircle, UserPlus, Check, X, BellOff } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import { friendApi } from "../utils/apiClient";
+import { toast } from "react-hot-toast";
+
+interface NotificationDropdownProps {
+  notifications: Notification[];
+  onMarkAsRead: (id: string | number) => void;
+  onMarkAllAsRead: () => void;
+  onClose: () => void;
+  refresh: () => void;
+}
+
+const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
+  notifications,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onClose,
+  refresh
+}) => {
+  const navigate = useNavigate();
+
+  const handleNotificationClick = (n: Notification) => {
+    // 1. Mark as read
+    onMarkAsRead(n.id);
+
+    // 2. Determine target URL
+    if (n.type === NotificationType.FRIEND_REQUEST || n.type === NotificationType.FRIEND_ACCEPT) {
+      const url = `/u/${n.actor.username}`;
+      navigate(url);
+    } else {
+      const targetPostId = n.targetId || n.referenceId;
+      if (!targetPostId) {
+        console.warn("Notification missing targetId or referenceId:", n);
+        onClose();
+        return;
+      }
+
+      const isCommentRelated = n.type === NotificationType.LIKE_COMMENT ||
+        n.type === NotificationType.REPLY_COMMENT ||
+        n.type === NotificationType.COMMENT_POST;
+
+      let url = `/posts/${targetPostId}`;
+      const queryParams = new URLSearchParams();
+
+      if (isCommentRelated && n.type !== NotificationType.COMMENT_POST) {
+        queryParams.set("commentId", String(n.referenceId));
+      } else if (n.type === NotificationType.COMMENT_POST) {
+        if (n.targetId && n.referenceId && n.targetId !== n.referenceId) {
+          queryParams.set("commentId", String(n.referenceId));
+        }
+      }
+
+      // Add ancestorIds if available (for nested comment auto-expansion)
+      if (n.ancestorIds) {
+        queryParams.set("ancestors", String(n.ancestorIds));
+      }
+
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+
+      console.log("Navigating to:", url);
+      navigate(url);
+    }
+
+    // 3. Close the dropdown AFTER initiating navigation to ensure Router context is still active
+    onClose();
+  };
+
+  const handleFriendAction = async (e: React.MouseEvent, n: Notification, action: "accept" | "decline") => {
+    e.stopPropagation();
+    try {
+      if (action === "accept") {
+        await friendApi.acceptRequest(String(n.actor.id));
+        toast.success(`Accept friend request from ${n.actor.fullName}`);
+      } else {
+        await friendApi.declineRequest(String(n.actor.id));
+        toast.success(`Decline friend request from ${n.actor.fullName}`);
+      }
+      onMarkAsRead(n.id);
+    } catch (error) {
+      toast.error("Action failed");
+    } finally {
+      refresh();
+    }
+  };
+
+  const getNotificationContent = (n: Notification) => {
+    switch (n.type) {
+      case NotificationType.FRIEND_REQUEST:
+        return "has sent you a friend request.";
+      case NotificationType.FRIEND_ACCEPT:
+        return "has accepted your friend request.";
+      case NotificationType.LIKE_POST:
+        return "has liked your post.";
+      case NotificationType.LIKE_COMMENT:
+        return "has liked your comment.";
+      case NotificationType.COMMENT_POST:
+        return "has commented on your post.";
+      case NotificationType.REPLY_COMMENT:
+        return "has replied to your comment.";
+      default:
+        return "has new interaction with you.";
+    }
+  };
+
+  const getIcon = (type: NotificationType) => {
+    switch (type) {
+      case NotificationType.LIKE_POST:
+      case NotificationType.LIKE_COMMENT:
+        return <Heart size={12} className="text-rose-500 fill-rose-500" />;
+      case NotificationType.COMMENT_POST:
+      case NotificationType.REPLY_COMMENT:
+        return <MessageCircle size={12} className="text-blue-500" />;
+      case NotificationType.FRIEND_REQUEST:
+      case NotificationType.FRIEND_ACCEPT:
+        return <UserPlus size={12} className="text-green-500" />;
+      default:
+        return <BellOff size={12} className="text-gray-400" />;
+    }
+  };
+
+  return (
+    <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-slide-up">
+      <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-white sticky top-0">
+        <h3 className="font-bold text-gray-900">Notifications</h3>
+        <button
+          onClick={onMarkAllAsRead}
+          className="text-xs text-blue-600 font-semibold hover:underline"
+        >
+          Mark all as read
+        </button>
+      </div>
+
+      <div className="max-h-[450px] overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="p-10 text-center text-gray-400">
+            <BellOff size={40} className="mx-auto mb-2 opacity-20" />
+            <p className="text-sm">You have no notifications</p>
+          </div>
+        ) : (
+          notifications.map((n) => (
+            <div
+              key={n.id}
+              onClick={() => handleNotificationClick(n)}
+              className={`p-4 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0 ${!n.isRead ? "bg-blue-50/30" : ""
+                }`}
+            >
+              <div className="relative shrink-0">
+                <img
+                  src={n.actor.avatarUrl || `https://ui-avatars.com/api/?name=${n.actor.fullName}&background=random`}
+                  className="w-12 h-12 rounded-full object-cover border border-gray-100"
+                  alt=""
+                />
+                <div className="absolute -bottom-1 -right-1 p-1 bg-white rounded-full shadow-sm border border-gray-50">
+                  {getIcon(n.type)}
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-800 leading-snug">
+                  <span className="font-bold">
+                    {n.actor.fullName || n.actor.username}
+                    {n.actorCount && n.actorCount > 1 && (
+                      <span className="font-normal text-gray-500"> và {n.actorCount - 1} người khác</span>
+                    )}
+                  </span>{" "}
+                  {getNotificationContent(n)}
+                </p>
+                <p className="text-[11px] text-gray-400 mt-1 font-medium italic">
+                  {formatDistanceToNow(new Date(n.updatedAt ?? n.createdAt), {
+                    addSuffix: true,
+                    locale: vi,
+                  })}
+                </p>
+
+                {/* Friend Request Actions */}
+                {n.isActionable && n.type === NotificationType.FRIEND_REQUEST && (
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={(e) => handleFriendAction(e, n, "accept")}
+                      className="flex-1 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 hover:bg-blue-700 transition-colors"
+                    >
+                      <Check size={14} /> Accept
+                    </button>
+                    <button
+                      onClick={(e) => handleFriendAction(e, n, "decline")}
+                      className="flex-1 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1 hover:bg-gray-200 transition-colors"
+                    >
+                      <X size={14} /> Decline
+                    </button>
+                  </div>
+                )}
+              </div>
+              {!n.isRead && (
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 shrink-0"></div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      <Link
+        to="/notifications"
+        onClick={onClose}
+        className="block w-full text-center py-3 bg-gray-50 text-sm font-bold text-blue-600 hover:bg-gray-100 transition-colors border-t border-gray-50"
+      >
+        View all notifications
+      </Link>
+    </div>
+  );
+};
+
+export default NotificationDropdown;

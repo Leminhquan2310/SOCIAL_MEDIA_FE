@@ -48,9 +48,9 @@ api.interceptors.request.use(
     }
 
     // Log requests in development
-    if (API_CONFIG.IS_DEVELOPMENT) {
-      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
-    }
+    // if (API_CONFIG.IS_DEVELOPMENT) {
+    //   console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+    // }
 
     return config;
   },
@@ -87,9 +87,9 @@ api.interceptors.response.use(
   (response) => {
     // Log successful responses in development
     if (API_CONFIG.IS_DEVELOPMENT) {
-      console.log(
-        `[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
-      );
+      // console.log(
+      //   `[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
+      // );
     }
     return response;
   },
@@ -156,11 +156,11 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh thất bại (RT hết hạn hoặc bị thu hồi)
         processQueue(refreshError as AxiosError, null);
-        
+
         setAccessToken(null);
-        
+
         // Redirect về login nếu refresh thất bại hoàn toàn
-        window.location.href = "/login";
+        // window.location.href = "/login"; // Tạm thời tắt để hỗ trợ Guest mode, để Router xử lý
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -211,32 +211,37 @@ api.interceptors.response.use(
  */
 export const handleApiError = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
-    const errorData = error.response?.data?.data as ErrorResponse;
+    // Some backend APIs return error in 'message' at top level
+    // Others wrap it in 'data'
+    const errorData = error.response?.data;
+    
+    // Ưu tiên lấy chi tiết lỗi cụ thể nằm trong data.message (từ GlobalExceptionHandler)
+    const specificMessage = typeof errorData?.data === 'string' ? errorData?.data : errorData?.data?.message;
+    // Lấy message chung nếu không có chi tiết cụ thể, hoặc bỏ qua nếu nó chỉ là các mã trạng thái như "FORBIDDEN", "BAD_REQUEST"
+    const genericMessage = (errorData?.message && !["FORBIDDEN", "UNAUTHORIZED", "BAD_REQUEST", "NOT_FOUND", "INTERNAL_SERVER_ERROR"].includes(errorData.message)) ? errorData.message : null;
+    
+    const message = specificMessage || genericMessage;
 
-    // Custom error message from server
-    if (errorData?.message) {
-      return errorData.message;
+    if (message) {
+      return message;
     }
 
     // Default error messages by status code
     switch (error.response?.status) {
       case 400:
-        return "Invalid request. Please check your input.";
+        return "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.";
       case 401:
-        return "Unauthorized. Please log in again.";
+        return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
       case 403:
-        return "You do not have permission to perform this action.";
+        return "Bạn không có quyền thực hiện hành động này.";
       case 404:
-        return "The requested resource was not found.";
+        return "Không tìm thấy dữ liệu yêu cầu.";
       case 429:
-        return "Too many requests. Please try again later.";
+        return "Quá nhiều yêu cầu. Vui lòng thử lại sau.";
       case 500:
-        return "Server error. Please try again later.";
-      case 502:
-      case 503:
-        return "Service unavailable. Please try again later.";
+        return "Lỗi hệ thống. Vui lòng thử lại sau ít phút.";
       default:
-        return error.message || "An unexpected error occurred.";
+        return error.message || "Đã xảy ra lỗi không mong muốn.";
     }
   }
 
@@ -244,7 +249,67 @@ export const handleApiError = (error: unknown): string => {
     return error.message;
   }
 
-  return "An unexpected error occurred.";
+  return "Đã xảy ra lỗi không mong muốn.";
+};
+
+/**
+ * Generic GET Request
+ */
+export const apiGet = async <T = unknown>(url: string, config?: any): Promise<T> => {
+  try {
+    const response = await api.get<T>(url, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic POST Request
+ */
+export const apiPost = async <T = unknown>(url: string, data?: any, config?: any): Promise<T> => {
+  try {
+    const response = await api.post<T>(url, data, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic PUT Request
+ */
+export const apiPut = async <T = unknown>(url: string, data?: any, config?: any): Promise<T> => {
+  try {
+    const response = await api.put<T>(url, data, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic PATCH Request
+ */
+export const apiPatch = async <T = unknown>(url: string, data?: any, config?: any): Promise<T> => {
+  try {
+    const response = await api.patch<T>(url, data, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+/**
+ * Generic DELETE Request
+ */
+export const apiDelete = async <T = unknown>(url: string, config?: any): Promise<T> => {
+  try {
+    const response = await api.delete<T>(url, config);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
 };
 
 export default api;

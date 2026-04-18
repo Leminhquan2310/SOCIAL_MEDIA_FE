@@ -8,9 +8,8 @@ import {
   RegisterResponse,
   ApiResponse,
 } from "../../types";
-import { MOCK_USER } from "../../constants";
 import api, { handleApiError, setAccessToken } from "../services/api";
-import { authApi } from "../utils/apiClient";
+import { authApi } from "../services/authApi";
 import { API_CONFIG } from "../config/apiConfig";
 
 interface AuthContextType extends AuthState {
@@ -51,14 +50,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Thử gọi API Refresh Token (với withCredentials: true đã set mặc định trong api.ts bundle)
       const response = await api.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH);
       const { accessToken } = response.data.data || response.data;
-      
+
       // Lưu AT vào bộ nhớ (api instance)
       setAccessToken(accessToken);
-      
+
       // Fetch profile
       const userResponse = await api.get(API_CONFIG.ENDPOINTS.USER.PROFILE);
       const userData = userResponse.data.data || userResponse.data;
-      
+
       setState({
         user: userData,
         isAuthenticated: true,
@@ -135,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       // Xóa dữ liệu bộ nhớ
       setAccessToken(null);
-      
+
       setState({
         user: null,
         isAuthenticated: false,

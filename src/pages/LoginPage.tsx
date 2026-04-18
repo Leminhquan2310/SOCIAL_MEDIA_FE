@@ -12,7 +12,7 @@ import { API_CONFIG } from "../config/apiConfig";
  */
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const { showLoading, hideLoading } = useLoading();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +22,16 @@ const LoginPage: React.FC = () => {
     password: "",
   });
 
-  // Redirect to home if already authenticated
+  // Redirect to home or admin if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      if (user?.roles?.includes("ROLE_ADMIN")) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   /**
    * OAuth2 Redirect Handler

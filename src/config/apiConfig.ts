@@ -5,11 +5,12 @@
 
 export const API_CONFIG = {
   // Base API URL - read from environment or use default
-  BASE_URL_ORIGIN: import.meta.env.VITE_API_BASE_URL_ORIGIN || "https://api.nexus-social.mock/v1",
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || "https://api.nexus-social.mock/v1",
+  BASE_URL_ORIGIN: import.meta.env.VITE_API_BASE_URL_ORIGIN || "https://localhost:8080",
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || "https://localhost:8080/api",
+  WS_URL: import.meta.env.VITE_WS_URL || "https://localhost:8080/ws-notifications",
 
   // Timeout duration in milliseconds
-  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || "10000"),
+  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || "30000"),
 
   // API Endpoints
   ENDPOINTS: {
@@ -25,62 +26,74 @@ export const API_CONFIG = {
     USER: {
       PROFILE: "/auth/me",
       GET_USER: (id: string) => `/users/${id}`,
+      GET_BY_USERNAME: (username: string) => `/users/username/${username}`,
       UPDATE_PROFILE: "/users/profile/update",
+      UPDATE_AVATAR: "/users/profile/avatar",
       GET_FOLLOWERS: (id: string) => `/users/${id}/followers`,
       GET_FOLLOWING: (id: string) => `/users/${id}/following`,
       FOLLOW: (id: string) => `/users/${id}/follow`,
       UNFOLLOW: (id: string) => `/users/${id}/unfollow`,
     },
 
-    // STATUS endpoints
-    STATUS: {
-      LIST: "/status",
-      GET: (id: string) => `/status/${id}`,
-      CREATE: "/status",
-      UPDATE: (id: string) => `/status/${id}`,
-      DELETE: (id: string) => `/status/${id}`,
-      LIKE: (id: string) => `/status/${id}/like`,
-      UNLIKE: (id: string) => `/status/${id}/unlike`,
-      GET_LIKES: (id: string) => `/status/${id}/likes`,
-      COMMENT: (id: string) => `/status/${id}/comments`,
-      SHARE: (id: string) => `/status/${id}/share`,
+    // POST endpoints (formerly STATUS)
+    POST: {
+      LIST: "/posts",
+      GET: (id: string) => `/posts/${id}`,
+      CREATE: "/posts",
+      UPDATE: (id: string) => `/posts/${id}`,
+      DELETE: (id: string) => `/posts/${id}`,
+      GET_ME: "/posts/me",
+      GET_FEED: "/posts/feed",
+      GET_USER_POSTS: (userId: string) => `/posts/user/${userId}`,
+      SEARCH: "/posts/search",
+      SHARE: (id: string) => `/posts/${id}/share`,
     },
 
     // Comment endpoints
     COMMENT: {
-      CREATE: "/comments",
-      UPDATE: (id: string) => `/comments/${id}`,
-      DELETE: (id: string) => `/comments/${id}`,
-      LIKE: (id: string) => `/comments/${id}/like`,
-      UNLIKE: (id: string) => `/comments/${id}/unlike`,
+      BY_POST: (postId: string) => `/posts/${postId}/comments`,
+      UPDATE: (commentId: string) => `/comments/${commentId}`,
+      DELETE: (commentId: string) => `/comments/${commentId}`,
+      REPLIES: (commentId: string) => `/comments/${commentId}/replies`,
+    },
+
+    // Like endpoints
+    LIKE: {
+      TOGGLE: "/likes/toggle",
+      STATUS: "/likes/status",
+      COUNT: "/likes/count",
     },
 
     // Friends endpoints
     FRIEND: {
-      LIST: "/friends",
+      LIST: (username: string) => `/friends/${username}`,
       SUGGESTIONS: "/friends/suggestions",
       REQUESTS: "/friends/requests",
       SEND_REQUEST: (id: string) => `/friends/request/${id}`,
+      CANCEL_REQUEST: (id: string) => `/friends/request/${id}`,
       ACCEPT_REQUEST: (id: string) => `/friends/accept/${id}`,
       DECLINE_REQUEST: (id: string) => `/friends/decline/${id}`,
       REMOVE_FRIEND: (id: string) => `/friends/${id}`,
+      GET_STATUS: (id: string) => `/friends/status/${id}`,
+      MUTUAL_FRIENDS: (id: string) => `/friends/mutual/${id}`,
     },
 
-    // Message endpoints
-    MESSAGE: {
-      LIST: "/messages",
-      GET_CONVERSATION: (id: string) => `/messages/conversation/${id}`,
-      SEND: "/messages/send",
-      DELETE: (id: string) => `/messages/${id}`,
-      MARK_READ: "/messages/mark-read",
+    // Chat endpoints
+    CHAT: {
+      CONVERSATIONS: "/chat/conversations",
+      MESSAGES: (id: string) => `/chat/messages/${id}`,
+      SEEN: (id: string) => `/chat/seen/${id}`,
+      UNREAD_COUNT: "/chat/unread-count",
+      GET_OR_CREATE: (receiverId: string) => `/chat/conversations/user/${receiverId}`,
     },
 
     // Notification endpoints
     NOTIFICATION: {
       LIST: "/notifications",
-      MARK_READ: "/notifications/mark-read",
+      MARK_READ: (id: string) => `/notifications/${id}/read`,
+      MARK_ALL_READ: "/notifications/read-all",
+      UNREAD_COUNT: "/notifications/unread-count",
       DELETE: (id: string) => `/notifications/${id}`,
-      SETTINGS: "/notifications/settings",
     },
 
     // Search endpoints

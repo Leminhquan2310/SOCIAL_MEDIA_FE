@@ -12,13 +12,13 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: "0.0.0.0",
       https: {
-        key: path.resolve(__dirname, "certs/key.pem"),
-        cert: path.resolve(__dirname, "certs/cert.pem"),
+        key: path.resolve(__dirname, "certs/localhost+2-key.pem"),
+        cert: path.resolve(__dirname, "certs/localhost+2.pem"),
       },
       // Proxy API requests to avoid CORS issues in development
       proxy: {
         "/api": {
-          target: env.VITE_API_BASE_URL || "https://localhost:8080/v1",
+          target: env.VITE_API_BASE_URL || "https://localhost:8080",
           changeOrigin: true,
           secure: false, // Vì là tự ký (self-signed) nên cần để false để không check CA
           rewrite: (path) => path.replace(/^\/api/, ""),
@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
 
     // Inject biến môi trường vào frontend
     define: {
+      global: "window",
       "import.meta.env.VITE_API_BASE_URL": JSON.stringify(env.VITE_API_BASE_URL),
       "import.meta.env.VITE_API_TIMEOUT": JSON.stringify(env.VITE_API_TIMEOUT),
       "import.meta.env.VITE_API_MAX_RETRIES": JSON.stringify(env.VITE_API_MAX_RETRIES),
